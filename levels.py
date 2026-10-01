@@ -98,7 +98,7 @@ def price_zones(ticker_symbol: str, margin_of_safety: float = 0.20) -> dict:
             zones.append((
                 f"เป้าหมายนักวิเคราะห์ หักเผื่อ {int(margin_of_safety * 100)}%",
                 mos_price,
-                f"เป้าหมายเฉลี่ย \\${float(target_mean):,.2f} — ราคาที่เผื่อพลาดไว้แล้ว",
+                f"เป้าหมายเฉลี่ย &#36;{float(target_mean):,.2f} — ราคาที่เผื่อพลาดไว้แล้ว",
             ))
 
         # Put OI สูงสุด (แนวรับทางจิตวิทยาจาก options)
@@ -129,11 +129,11 @@ def price_zones(ticker_symbol: str, margin_of_safety: float = 0.20) -> dict:
             gap = abs(nearest_below["gap_pct"])
             if gap <= 3:
                 notes.append(
-                    f"ราคาตอนนี้อยู่ใกล้ {nearest_below['name']} (\\${nearest_below['price']:,.2f}) ห่างเพียง {gap:.1f}%"
+                    f"ราคาตอนนี้อยู่ใกล้ {nearest_below['name']} (&#36;{nearest_below['price']:,.2f}) ห่างเพียง {gap:.1f}%"
                 )
             else:
                 notes.append(
-                    f"แนวรับใกล้สุดใต้ราคาปัจจุบันคือ {nearest_below['name']} ที่ \\${nearest_below['price']:,.2f} "
+                    f"แนวรับใกล้สุดใต้ราคาปัจจุบันคือ {nearest_below['name']} ที่ &#36;{nearest_below['price']:,.2f} "
                     f"(ต่ำกว่าราคาตอนนี้ {gap:.1f}%)"
                 )
         else:
