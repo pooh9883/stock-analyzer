@@ -345,7 +345,7 @@ def render_live_panel(ticker: str, zones_result: dict = None):
         gap = (price_now - nb["price"]) / price_now * 100
         zone_txt = (
             f"<span style='color:#9a9aa8; font-size:13px; margin-left:18px;'>แนวรับอ้างอิงใกล้สุด:</span> "
-            f"<span style='color:#d4af37; font-weight:600;'>\\${nb['price']:,.2f}</span> "
+            f"<span style='color:#d4af37; font-weight:600;'>&#36;{nb['price']:,.2f}</span> "
             f"<span style='color:#9a9aa8; font-size:13px;'>(ห่างลงไป {gap:.1f}% · {nb['name']})</span>"
         )
 
@@ -353,7 +353,7 @@ def render_live_panel(ticker: str, zones_result: dict = None):
         f"""
         <div style="background:#14161d; border:1px solid rgba(212,175,55,0.3); border-radius:10px; padding:12px 18px; margin-bottom:10px;">
             <span style="color:#9a9aa8; font-size:13px;">ราคาล่าสุด {ticker}</span>
-            <span style="font-size:26px; font-weight:700; color:#f4f0e6; font-family:'IBM Plex Mono', monospace; margin-left:8px;">\\${price_now:,.2f}</span>
+            <span style="font-size:26px; font-weight:700; color:#f4f0e6; font-family:'IBM Plex Mono', monospace; margin-left:8px;">&#36;{price_now:,.2f}</span>
             <span style="color:{color}; font-weight:600; margin-left:10px;">{chg_txt}</span>
             {zone_txt}
             <div style="color:#8a8a98; font-size:11px; margin-top:4px;">อัปเดตอัตโนมัติ · ข้อมูลฟรีจาก Yahoo อาจช้ากว่าราคาจริงเล็กน้อย</div>
@@ -361,6 +361,60 @@ def render_live_panel(ticker: str, zones_result: dict = None):
         """,
         unsafe_allow_html=True,
     )
+
+    # ---------- กล่องเทียบสี: หุ้นคุณ vs ตลาดรวม (SPY) — ดูปุ๊บเข้าใจเลย ----------
+    spy_q = cached_live_quote("SPY") if ticker != "SPY" else q
+    if spy_q.get("available") and chg_pct is not None and spy_q.get("change_pct") is not None:
+        spy_pct = spy_q["change_pct"]
+        stock_up = chg_pct > 0
+        spy_up = spy_pct > 0
+
+        stock_color = "#3ecf6e" if stock_up else ("#e5534b" if chg_pct < 0 else "#9a9aa8")
+        spy_color = "#3ecf6e" if spy_up else ("#e5534b" if spy_pct < 0 else "#9a9aa8")
+        stock_arrow = "🟢▲" if stock_up else ("🔴▼" if chg_pct < 0 else "⚪")
+        spy_arrow = "🟢▲" if spy_up else ("🔴▼" if spy_pct < 0 else "⚪")
+
+        if stock_up and not spy_up:
+            verdict_text = "✅ หุ้นคุณเขียว ตลาดรวมแดง — แข็งแกร่งกว่าตลาดตอนนี้"
+            verdict_bg, verdict_fg = "rgba(62,207,110,0.12)", "#3ecf6e"
+        elif (not stock_up) and spy_up:
+            verdict_text = "⚠️ หุ้นคุณแดง ตลาดรวมเขียว — อ่อนแอกว่าตลาดตอนนี้"
+            verdict_bg, verdict_fg = "rgba(229,83,75,0.12)", "#e5534b"
+        else:
+            verdict_text = "➖ หุ้นคุณกับตลาดรวมไปทางเดียวกัน"
+            verdict_bg, verdict_fg = "rgba(212,175,55,0.12)", "#d4af37"
+
+        st.markdown(
+            f"""
+            <div style="display:flex; gap:10px; margin-bottom:8px;">
+                <div style="flex:1; background:#14161d; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px; text-align:center;">
+                    <div style="color:#9a9aa8; font-size:13px; margin-bottom:4px;">หุ้นคุณ · {ticker}</div>
+                    <div style="font-size:30px; font-weight:700; color:{stock_color}; font-family:'IBM Plex Mono', monospace;">{stock_arrow} {chg_pct:+.2f}%</div>
+                </div>
+                <div style="flex:1; background:#14161d; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px; text-align:center;">
+                    <div style="color:#9a9aa8; font-size:13px; margin-bottom:4px;">ตลาดรวม · S&P500 (SPY)</div>
+                    <div style="font-size:30px; font-weight:700; color:{spy_color}; font-family:'IBM Plex Mono', monospace;">{spy_arrow} {spy_pct:+.2f}%</div>
+                </div>
+            </div>
+            <div style="background:{verdict_bg}; border:1px solid {verdict_fg}; border-radius:10px; padding:10px 16px; margin-bottom:4px; text-align:center;">
+                <span style="color:{verdict_fg}; font-weight:700; font-size:16px;">{verdict_text}</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        with st.expander("ตารางอธิบาย: หุ้นคุณ vs ตลาดรวม แปลว่าอะไรบ้าง"):
+            st.markdown(
+                """
+| หุ้นคุณ | ตลาดรวม | แปลว่า |
+|---|---|---|
+| 🟢 เขียว | 🟢 เขียว | ขึ้นตามตลาด ปกติ |
+| 🟢 เขียว | 🔴 แดง | **แข็งแกร่งกว่าตลาด** น่าสนใจ |
+| 🔴 แดง | 🟢 เขียว | **อ่อนแอกว่าตลาด** ต้องระวัง |
+| 🔴 แดง | 🔴 แดง | ลงตามตลาด ปกติ |
+                """
+            )
+        st.write("")
 
 
 # =================================================================
@@ -536,6 +590,33 @@ st.markdown(
 )
 st.write("")
 
+with st.expander("📖 คู่มือดูหน้านี้ใน 1 นาที (กดอ่านก่อนถ้ายังไม่คุ้น)", expanded=False):
+    st.markdown(
+        """
+**สรุปสั้นสุด:** เลื่อนหาคะแนนใหญ่ตัวเดียวในกล่อง **"◆ สรุปสุดท้าย"** (อยู่เกือบท้ายหน้า) —
+เขียวมากกว่า +25% = น่าสนใจ, แดงน้อยกว่า -25% = ควรระวัง, อยู่กลางๆ = ยังไม่ชัดเจน
+นั่นคือตัวเลขสำคัญที่สุด ไม่ต้องอ่านอย่างอื่นก็พอ
+
+**ถ้าอยากรู้ว่าทำไมได้คะแนนแบบนั้น** ให้ไล่อ่านตามลำดับบนลงล่างในหน้านี้ (จัดเรียงเป็นขั้นให้แล้ว):
+
+| ขั้น | ชื่อกล่องในหน้านี้ | ตอบคำถามว่า |
+|---|---|---|
+| 1 | โซนราคาอ้างอิง | ราคาตอนนี้ถูกหรือแพงเทียบกับอดีต |
+| 2 | บทวิเคราะห์ 10 มิติ | ธุรกิจพื้นฐานดีไหม |
+| 3 | ทดสอบย้อนหลัง (Backtest) | เชื่อกราฟเทคนิคได้แค่ไหน |
+| 4 | แนวโน้มระยะสั้น | คนวงใน/สถาบัน/นักวิเคราะห์คิดยังไง |
+| 5 | สัญญาณเสริม + ตลาดรวม | หุ้นนี้แรงกว่าตลาด S&P500 ไหม, มีข่าวใหญ่ใกล้ๆ ไหม |
+
+**เทียบกับตลาดรวมวันนี้ยังไง?** ดูที่กล่อง **"ความแข็งแกร่งเทียบตลาด S&P500"** ในขั้นที่ 5
+— ถ้าหุ้นคุณเขียวตอนตลาดรวมแดง = สัญญาณดี (แข็งแกร่งกว่าตลาด)
+
+**ราคาสดอัปเดตเองไหม?** แผงสีทองบนสุดอัปเดตอัตโนมัติ ไม่ต้องกด refresh —
+ส่วนที่เหลือ (10 มิติ, Backtest ฯลฯ) เปลี่ยนช้า ไม่ต้องรออัปเดตเป็นวินาที
+
+⚠️ ทุกตัวเลขในหน้านี้เป็นข้อมูลประกอบการตัดสินใจ ไม่ใช่คำแนะนำซื้อ-ขาย และไม่มีระบบไหนทำนายราคาได้แม่นยำ 100%
+        """
+    )
+
 if "analysis" not in st.session_state:
     st.session_state.analysis = None
 if "ai_summary" not in st.session_state:
@@ -591,13 +672,13 @@ else:
 
     if zones_res.get("available"):
         cur = zones_res["current"]
-        st.write(f"ราคาปัจจุบัน: **\\${cur:,.2f}**")
+        st.write(f"ราคาปัจจุบัน: **&#36;{cur:,.2f}**")
 
         for z in zones_res["zones"]:
             below = z["price"] < cur
             marker = "⬇️ ต่ำกว่าราคาตอนนี้" if below else "⬆️ สูงกว่าราคาตอนนี้"
             st.markdown(
-                f"**\\${z['price']:,.2f}** ({z['gap_pct']:+.1f}%) — {z['name']}  \n"
+                f"**&#36;{z['price']:,.2f}** ({z['gap_pct']:+.1f}%) — {z['name']}  \n"
                 f"<span style='color:#9a9aa8; font-size:13px;'>{marker} · {z['note']}</span>",
                 unsafe_allow_html=True,
             )
@@ -905,12 +986,16 @@ else:
         f"สัญญาณตลาด+เทคนิครวม (Options, Insider, Institution, Analyst, Technical, Momentum, "
         f"Relative Strength, IV Skew, Earnings, News): {combined_lean:+.1f}% — {combined_verdict}",
     ]
+    rel_strength_raw = deep_result.get("raw", {}).get("relative_strength", {})
+    if rel_strength_raw.get("available") and rel_strength_raw.get("notes"):
+        summary_lines.append("📊 **เทียบกับตลาดรวม (S&P500):** " + rel_strength_raw["notes"][0])
+
     if one_month.get("available"):
         summary_lines.append(f"แนวโน้มในกรอบ 1 เดือนข้างหน้า: {om_lean:+.1f}% — {one_month['verdict']}")
         if one_month.get("earnings_within_month"):
             summary_lines.append("⚠️ มีวันประกาศผลประกอบการอยู่ในกรอบเดือนนี้ — เป็นทั้งโอกาสและความเสี่ยงที่ควรจับตาเป็นพิเศษ")
 
-    summary_lines.append(f"บรรยากาศตลาดโดยรวม (VIX + อัตราผลตอบแทนพันธบัตร): {macro_lean:+.1f}%")
+    summary_lines.append(f"บรรยากาศตลาดรวมกว้างๆ (VIX + อัตราผลตอบแทนพันธบัตร — คนละอย่างกับเทียบ S&P500 ด้านบน): {macro_lean:+.1f}%")
 
     if bt_result.get("available") and bt_result.get("overall_accuracy") is not None:
         summary_lines.append(
