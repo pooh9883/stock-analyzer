@@ -10,6 +10,7 @@ app.py — Quant Stock Analyzer (ฟรีตลอด)
 """
 
 import streamlit as st
+import pandas as pd
 from urllib.parse import urlparse
 import scoring    # ไฟล์ scoring.py ที่อยู่โฟลเดอร์เดียวกัน
 import advanced   # ไฟล์ advanced.py — options chain, insider, institution, analyst, technical ขั้นสูง
@@ -18,6 +19,7 @@ import backtest   # ไฟล์ backtest.py — ทดสอบย้อนห�
 import macro      # ไฟล์ macro.py — VIX, อัตราผลตอบแทนพันธบัตร 10 ปี
 import news_radar # ไฟล์ news_radar.py — ดึงหัวข้อข่าวจริงให้ AI อ่านตอนสรุป
 import levels     # ไฟล์ levels.py — ราคาสดแบบอัปเดตอัตโนมัติ + โซนราคาอ้างอิง
+import market_overview  # ไฟล์ market_overview.py — ภาพรวมตลาด: หุ้นขึ้น/ลงแรงสุด, หุ้นใหญ่แต่ละกลุ่ม
 
 st.set_page_config(
     page_title="Quant Stock Analyzer",
@@ -425,7 +427,7 @@ with st.sidebar:
 
     mode = st.radio(
         "โหมดการใช้งาน",
-        ["🔍 วิเคราะห์หุ้นรายตัว", "📰 เรดาร์ข่าว (Watchlist)"],
+        ["🔍 วิเคราะห์หุ้นรายตัว", "📈 ภาพรวมตลาด", "📰 เรดาร์ข่าว (Watchlist)"],
         index=0,
     )
 
@@ -451,6 +453,165 @@ with st.sidebar:
         help="ใช้เชื่อมต่อบริการสรุปข้อความอัตโนมัติ (ฟรี) — ไม่ใส่ก็ใช้แอปได้ครบทุกฟีเจอร์หลัก",
     )
     st.caption("ระบบคะแนนหลักด้านล่างทำงานได้ฟรีเสมอ ไม่ว่าจะใส่คีย์นี้หรือไม่")
+
+
+# =================================================================
+# โหมด: ภาพรวมตลาด — หุ้นขึ้นแรงสุด/ลงแรงสุด + หุ้นใหญ่แต่ละกลุ่มอุตสาหกรรม
+# =================================================================
+if mode.startswith("📈"):
+    st.markdown(
+        """
+        <div class="app-header">
+            <div class="mark">◆</div>
+            <div class="title-text">
+                <h1>ภาพรวมตลาด — MARKET OVERVIEW</h1>
+                <p>สแกนหุ้นสหรัฐทั้งตลาด + หุ้นใหญ่ของทั้ง 11 กลุ่มอุตสาหกรรม</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.write("")
+    st.caption("ข้อมูลฟรีจาก Yahoo อาจดีเลย์ราว 15 นาที ใช้ดูบรรยากาศตลาด ไม่ใช่คำแนะนำซื้อ-ขาย")
+
+    @st.cache_data(ttl=300, show_spinner=False)
+    def cached_market_snapshot():
+        return market_overview.get_market_snapshot()
+
+    @st.cache_data(ttl=300, show_spinner=False)
+    def cached_movers():
+        return market_overview.get_market_movers(size=10)
+
+    @st.cache_data(ttl=900, show_spinner=False)
+    def cached_sector_leaders():
+        return market_overview.get_sector_leaders(top_n=5)
+
+    with st.spinner("กำลังสแกนหุ้นทั้งตลาดสหรัฐ..."):
+        movers = cached_movers()
+        sector_data = cached_sector_leaders()
+        snapshot = {"available": False}
+        if not movers.get("available") or not sector_data.get("available"):
+            snapshot = cached_market_snapshot()  # ตัวสำรอง: รายชื่อที่คัดไว้
+
+    broad = movers.get("available", False)
+    if not broad and not snapshot.get("available"):
+        st.error(f"ดึงข้อมูลภาพรวมตลาดไม่สำเร็จ ({movers.get('reason', 'ไม่ทราบสาเหตุ')}) ลองรีเฟรชอีกครั้งในอีกสักครู่")
+        st.stop()
+
+    names = {}
+    if broad:
+        gainers = [(m["symbol"], m["change_pct"], m["price"]) for m in movers["gainers"]]
+        losers = [(m["symbol"], m["change_pct"], m["price"]) for m in movers["losers"]]
+        names = {m["symbol"]: m["name"] for m in movers["gainers"] + movers["losers"] + movers["actives"]}
+        st.caption("สแกนจากหุ้นสหรัฐทั้งตลาด (เฉพาะบริษัทมูลค่าตลาด ≥ 2 พันล้านดอลลาร์ ราคา ≥ 5 ดอลลาร์) ไม่จำกัดรายชื่อ")
+    else:
+        gainers, losers = market_overview.top_movers(snapshot, n=5)
+        st.caption("สแกนทั้งตลาดไม่สำเร็จ แสดงจากรายชื่อหุ้นที่คัดไว้แทน (ลอง pip install -U yfinance)")
+
+    _lbl = "หุ้นขึ้นแรงสุด / ลงแรงสุด (ทั้งตลาดสหรัฐ)" if broad else "หุ้นขึ้นแรงสุด / ลงแรงสุด (จากกลุ่มที่คัดไว้)"
+    st.markdown(f'<div class="section-label">{_lbl}</div>', unsafe_allow_html=True)
+
+    col_g, col_l = st.columns(2)
+    with col_g:
+        st.markdown("**🟢 ขึ้นแรงสุด**")
+        for t, chg, price in gainers:
+            st.write(f"**{t}** {names.get(t, '')[:22]}  ·  &#36;{price:,.2f}  ·  :green[{chg:+.2f}%]")
+    with col_l:
+        st.markdown("**🔴 ลงแรงสุด**")
+        for t, chg, price in losers:
+            st.write(f"**{t}** {names.get(t, '')[:22]}  ·  &#36;{price:,.2f}  ·  :red[{chg:+.2f}%]")
+
+    if broad and movers.get("actives"):
+        with st.expander("🔥 ซื้อขายคึกคักสุดวันนี้ (ปริมาณซื้อขายสูงสุด)"):
+            for m in movers["actives"]:
+                col = "green" if m["change_pct"] >= 0 else "red"
+                vol = (m.get("volume") or 0) / 1e6
+                st.write(f"**{m['symbol']}** {m['name'][:22]}  ·  &#36;{m['price']:,.2f}  ·  :{col}[{m['change_pct']:+.2f}%]  ·  ปริมาณ {vol:,.1f} ล้านหุ้น")
+
+    st.write("")
+    chart_tickers = [t for t, _, _ in gainers] + [t for t, _, _ in losers]
+    chart_values = [chg for _, chg, _ in gainers] + [chg for _, chg, _ in losers]
+
+    @st.cache_data(ttl=300, show_spinner=False)
+    def cached_history(tickers_tuple):
+        return market_overview.get_normalized_history(list(tickers_tuple), period="1mo")
+
+    st.markdown('<div class="section-label">แนวโน้มราคา 1 เดือน (% เทียบวันแรก)</div>', unsafe_allow_html=True)
+    hist_result = cached_history(tuple(chart_tickers))
+    if hist_result.get("available"):
+        hdf = hist_result["df"]
+        options = [t for t in chart_tickers if t in hdf.columns]
+        today_chg = {t: c for t, c, _ in gainers + losers}
+        pick = st.selectbox(
+            "เลือกหุ้นที่อยากดูกราฟ",
+            options,
+            format_func=lambda t: f"{t}  (วันนี้ {today_chg.get(t, 0):+.2f}%)",
+        )
+        series = hdf[pick].dropna()
+        month_chg = float(series.iloc[-1])
+        up = month_chg >= 0
+        m1, m2 = st.columns(2)
+        m1.metric("ราคาเปลี่ยนใน 1 เดือน", f"{month_chg:+.2f}%")
+        m2.metric("วันนี้", f"{today_chg.get(pick, 0):+.2f}%")
+        st.line_chart(
+            series.rename(pick).to_frame(),
+            color="#3ecf6e" if up else "#e5534b",
+            height=300,
+        )
+        st.caption("เส้นเริ่มที่ 0% ถ้าเส้นอยู่เหนือ 0 แปลว่าราคาสูงกว่าเมื่อเดือนก่อน")
+    else:
+        st.caption(f"วาดกราฟเส้นไม่ได้ ({hist_result.get('reason', 'ไม่ทราบสาเหตุ')}) แสดงกราฟแท่งแทน")
+        chart_df = pd.DataFrame({"% เปลี่ยนแปลงวันนี้": chart_values}, index=chart_tickers)
+        st.bar_chart(chart_df, color="#d4af37")
+
+    st.markdown("---")
+
+    st.markdown('<div class="section-label">สภาพหุ้นใหญ่แต่ละกลุ่มอุตสาหกรรม (เรียงจากกลุ่มที่แข็งแรงสุด)</div>', unsafe_allow_html=True)
+
+    # รวมข้อมูลกลุ่มอุตสาหกรรมให้อยู่รูปเดียวกัน (ใช้ข้อมูลกว้างก่อน ถ้าไม่ได้ค่อยใช้รายชื่อที่คัดไว้)
+    sector_view = {}
+    if sector_data.get("available"):
+        sector_view = sector_data["sectors"]
+    elif snapshot.get("available"):
+        for sector, tickers in market_overview.SECTOR_LEADERS.items():
+            rows = [
+                {"symbol": t, "price": snapshot["data"][t]["price"], "change_pct": snapshot["data"][t]["change_pct"]}
+                for t in tickers if t in snapshot["data"]
+            ]
+            if rows:
+                sector_view[sector] = {"stocks": rows, "avg_change": sum(r["change_pct"] for r in rows) / len(rows)}
+
+    # เรียงกลุ่มที่แข็งแรงสุดไว้บนสุด
+    for sector, info in sorted(sector_view.items(), key=lambda kv: kv[1]["avg_change"], reverse=True):
+        avg = info["avg_change"]
+        icon = "🟢" if avg > 0 else ("🔴" if avg < 0 else "⚪")
+        with st.expander(f"{icon} {sector}  ·  เฉลี่ย {avg:+.2f}%"):
+            rows = info["stocks"]
+            cols = st.columns(len(rows))
+            for i, d in enumerate(rows):
+                chg = d["change_pct"]
+                color = "#3ecf6e" if chg > 0 else ("#e5534b" if chg < 0 else "#9a9aa8")
+                cols[i].markdown(
+                    f"""
+                    <div style="text-align:center;">
+                        <div style="color:#9a9aa8; font-size:13px;">{d['symbol']}</div>
+                        <div style="font-size:18px; font-weight:700; color:#f4f0e6;">&#36;{d['price']:,.2f}</div>
+                        <div style="color:{color}; font-weight:600;">{chg:+.2f}%</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+    if not sector_view:
+        st.caption("ดึงข้อมูลกลุ่มอุตสาหกรรมไม่สำเร็จ ลองรีเฟรชอีกครั้ง")
+
+    st.markdown("---")
+    st.caption(
+        "ข้อมูลนี้เป็นภาพรวมเร็วๆ เพื่อดูบรรยากาศตลาด ไม่ใช่คำแนะนำซื้อ-ขาย "
+        "อยากวิเคราะห์เจาะลึกหุ้นตัวไหน สลับไปโหมด '🔍 วิเคราะห์หุ้นรายตัว' แล้วพิมพ์ชื่อหุ้นนั้นได้เลย"
+    )
+
+    st.stop()
 
 
 # =================================================================
