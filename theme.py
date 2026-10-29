@@ -258,13 +258,18 @@ hr{border-color:var(--line) !important;}
 }
 
 /* ---------- Boot (ขึ้นครั้งเดียวต่อเซสชัน) ---------- */
-.boot{position:fixed;inset:0;z-index:10000;background:#05060d;display:grid;place-items:center;
+.boot{position:fixed;inset:0;z-index:2147483647;background:#05060d;display:grid;place-items:center;
   animation:bootOut .55s ease 45s forwards;  /* กันค้างกรณีระบบขัดข้อง: จางหายเองหลัง 45 วินาที (ปกติต้องกดปุ่มหรือ Enter) */
   background-image:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,240,255,.04) 3px);}
-.boot-in{font-family:var(--mono);font-size:14px;letter-spacing:1.2px;min-width:min(520px,86vw);}
+.boot-in{font-family:var(--mono);font-size:clamp(10.5px,1.75vw,26px);letter-spacing:1.2px;width:min(940px,88vw);}
+.boot .boot-top,.boot .boot-bot{position:absolute;left:5vw;right:5vw;font-family:var(--mono);font-size:clamp(10px,1vw,14px);letter-spacing:3px;color:var(--cyan);opacity:.8;display:flex;justify-content:space-between;}
+.boot .boot-top{top:4.5vh;}.boot .boot-bot{bottom:4.5vh;color:var(--muted);}
+.boot .boot-c{position:absolute;width:clamp(28px,4vw,64px);height:clamp(28px,4vw,64px);border:2px solid var(--gold);opacity:.85;}
+.boot .boot-c.c-tl{top:2.5vh;left:2.5vw;border-right:0;border-bottom:0}.boot .boot-c.c-tr{top:2.5vh;right:2.5vw;border-left:0;border-bottom:0}
+.boot .boot-c.c-bl{bottom:2.5vh;left:2.5vw;border-right:0;border-top:0}.boot .boot-c.c-br{bottom:2.5vh;right:2.5vw;border-left:0;border-top:0}
 .boot .bl{white-space:nowrap;overflow:hidden;width:0;opacity:0;color:var(--cyan);margin:5px 0;
   animation:bootOn 0s var(--d) forwards, bootType .5s steps(46,end) var(--d) forwards;}
-.boot .bl.ok{color:var(--gold);text-shadow:2px 0 rgba(255,42,109,.8),-2px 0 rgba(0,240,255,.8);font-size:17px;font-weight:700;margin-top:12px;}
+.boot .bl.ok{color:var(--gold);text-shadow:2px 0 rgba(255,42,109,.8),-2px 0 rgba(0,240,255,.8);font-size:1.3em;font-weight:700;margin-top:.7em;}
 .boot::after{content:"";position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1px;background:#fff;
   box-shadow:0 0 22px 4px var(--cyan),0 0 50px 10px rgba(0,240,255,.5);opacity:0;}
 .boot.boot-out{animation:bootExit .85s cubic-bezier(.7,0,.3,1) forwards;pointer-events:none;}
@@ -282,10 +287,10 @@ hr{border-color:var(--line) !important;}
 }
 @keyframes bootLine{0%,40%{opacity:0}72%{opacity:1}100%{opacity:0}}
 .boot .boot-go{opacity:0;margin-top:24px;text-align:center;color:var(--gold);border:2px solid var(--gold);padding:10px 18px;
-  font-weight:700;letter-spacing:4px;font-size:15px;animation:bootOn 0s 2.5s forwards, goPulse 1.3s ease-in-out 2.5s infinite;}
+  font-weight:700;letter-spacing:.3em;font-size:1.05em;padding:.8em 1em;animation:bootOn 0s 2.5s forwards, goPulse 1.3s ease-in-out 2.5s infinite;}
 .boot .boot-go{cursor:pointer;}
 .boot .boot-go:hover{background:var(--gold);color:#05060d;}
-.boot .boot-hint{opacity:0;margin-top:10px;text-align:center;color:var(--muted);font-size:11.5px;letter-spacing:1px;animation:bootOn 0s 2.7s forwards;}
+.boot .boot-hint{opacity:0;margin-top:.9em;text-align:center;color:var(--muted);font-size:.72em;letter-spacing:1px;animation:bootOn 0s 2.7s forwards;}
 @keyframes goPulse{0%,100%{box-shadow:0 0 4px rgba(252,238,10,.35)}50%{box-shadow:0 0 18px rgba(0,240,255,.85)}}
 @keyframes bootOn{to{opacity:1}}
 @keyframes bootType{to{width:100%}}
@@ -355,7 +360,10 @@ def hero(title: str, subtitle: str = "", pill: str = "LIVE"):
 
 
 BOOT_HTML = """
-<div class="boot"><div class="boot-in">
+<div class="boot"><i class="boot-c c-tl"></i><i class="boot-c c-tr"></i><i class="boot-c c-bl"></i><i class="boot-c c-br"></i>
+<div class="boot-top"><span>QUANT STOCK ANALYZER // SYSTEM BOOT</span><span>v2077</span></div>
+<div class="boot-bot"><span>SECURE LINK ESTABLISHED</span><span>NIGHT CITY MARKET FEED</span></div>
+<div class="boot-in">
 <div class="bl" style="--d:.15s">&gt; BOOT SEQUENCE ................ OK</div>
 <div class="bl" style="--d:.65s">&gt; LINKING NIGHT CITY MARKET FEED ... OK</div>
 <div class="bl" style="--d:1.15s">&gt; LOADING QUANT CORE v2077 ........ OK</div>
