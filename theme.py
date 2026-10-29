@@ -3,14 +3,6 @@
 theme.py
 ========
 ดีไซน์ทั้งเว็บ: สไตล์ Cyberpunk (เหลือง-ฟ้า-ชมพูนีออน มุมตัด สแกนไลน์ ตัวเลขฟอนต์โมโน)
-
-app.py เรียกใช้:
-- ensure_streamlit_theme(โฟลเดอร์แอป)  สร้างไฟล์ .streamlit/config.toml ให้อัตโนมัติ (ทำให้ตาราง/ช่องกรอก/แถบบนเป็นสีเข้มจริง)
-- inject()                               ฉีด CSS ทั้งเว็บ
-- brand_sidebar()                        โลโก้ + สถานะตลาดสหรัฐ (เวลาไทย) บนแถบซ้าย
-- ticker_tape(markets)                   แถบราคาเลื่อนด้านบน
-- hero(title, subtitle, pill)            หัวหน้าแบบใหม่
-- hud(markets)                           แถบสถานะล่างจอ + ตัวเลขราคากะพริบ
 """
 
 from datetime import datetime
@@ -113,7 +105,7 @@ section[data-testid="stSidebar"] label[data-testid="stRadioOption"][data-selecte
 }
 section[data-testid="stSidebar"] label[data-testid="stRadioOption"] p{font-weight:600;font-size:14.5px;letter-spacing:.3px;}
 
-/* radio แนวนอนในหน้าหลัก: ปุ่มสลับทรงตัดมุม */
+/* radio แนวนอนในหน้าหลัก */
 [data-testid="stMain"] [data-testid="stRadioGroup"]{gap:6px;flex-wrap:wrap;}
 [data-testid="stMain"] label[data-testid="stRadioOption"]{
   padding:6px 14px !important;margin:0 !important;border-radius:0;border:1px solid var(--line);
@@ -126,41 +118,6 @@ section[data-testid="stSidebar"] label[data-testid="stRadioOption"] p{font-weigh
 }
 [data-testid="stMain"] label[data-testid="stRadioOption"][data-selected="true"] p{color:#05060d !important;font-weight:700;}
 
-/* ชุดสำรองสำหรับ Streamlit รุ่นเก่า (baseweb) */
-section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-baseweb="radio"]{
-  width:100%;margin:0 !important;padding:9px 12px !important;border-radius:0;border:1px solid transparent;transition:.15s;cursor:pointer;
-}
-section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-baseweb="radio"] > div:first-child{display:none;}
-section.main div[role="radiogroup"] > label[data-baseweb="radio"]{
-  padding:6px 14px !important;margin:0 6px 0 0 !important;border-radius:0;border:1px solid var(--line);background:var(--panel);cursor:pointer;
-}
-section.main div[role="radiogroup"] > label[data-baseweb="radio"] > div:first-child{display:none;}
-
-/* ---------- หัวหน้า (hero) ---------- */
-.app-header, .hero{
-  display:flex !important;align-items:center;gap:16px;padding:18px 26px !important;margin-bottom:14px !important;
-  border:1px solid var(--line) !important;border-left:4px solid var(--gold) !important;border-radius:0 !important;position:relative;overflow:hidden;
-  background:
-    linear-gradient(135deg,rgba(252,238,10,.10),rgba(5,6,13,.4) 38%,rgba(255,42,109,.10)),
-    repeating-linear-gradient(135deg,transparent 0 10px,rgba(0,240,255,.025) 10px 11px);
-  clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));
-}
-.app-header::after, .hero::after{
-  content:"";position:absolute;left:0;right:0;top:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--cyan),var(--gold),var(--pink),transparent);
-  background-size:200% 100%;animation:sweep 5s linear infinite;
-}
-@keyframes sweep{0%{background-position:0 0}100%{background-position:200% 0}}
-.app-header .mark, .hero-mark{width:46px;height:46px;display:grid;place-items:center;flex:none;
-  font-size:24px !important;color:#05060d !important;background:var(--gold);font-weight:700;
-  clip-path:polygon(0 0,calc(100% - 11px) 0,100% 11px,100% 100%,11px 100%,0 calc(100% - 11px));}
-.app-header .title-text h1, .hero-title{margin:0 !important;font-size:27px !important;font-weight:700 !important;color:#fff !important;
-  letter-spacing:1.2px;text-shadow:2px 0 rgba(255,42,109,.75),-2px 0 rgba(0,240,255,.75);}
-.app-header .title-text p, .hero-sub{margin:3px 0 0 0 !important;font-size:13px !important;color:var(--muted) !important;letter-spacing:.4px;}
-.hero-pill{margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:2px;padding:5px 12px;white-space:nowrap;
-  border:1px solid var(--cyan);color:var(--cyan);background:rgba(0,240,255,.08);
-  clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));}
-
 /* หัวข้อส่วน */
 .section-label{display:flex !important;align-items:center;gap:12px;color:var(--gold) !important;font-size:13px !important;
   font-weight:700 !important;letter-spacing:2px;margin:6px 0 10px 0 !important;}
@@ -168,14 +125,14 @@ section.main div[role="radiogroup"] > label[data-baseweb="radio"] > div:first-ch
 .section-label::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(252,238,10,.5),transparent);}
 .stMarkdown h4{border-left:3px solid var(--gold);padding-left:11px;margin-top:1.3rem !important;font-weight:700 !important;letter-spacing:.5px;}
 
-/* ---------- การ์ด / ตัวเลข ---------- */
+/* การ์ด / ตัวเลข */
 div[data-testid="stMetric"]{
   background:linear-gradient(160deg,rgba(0,240,255,.07),rgba(12,14,28,.7) 55%) !important;
   border:1px solid var(--line) !important;border-top:2px solid var(--cyan) !important;border-radius:0 !important;padding:14px 16px 10px 16px !important;
   backdrop-filter:blur(6px);transition:.15s;
   clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
 }
-div[data-testid="stMetric"]:hover{border-color:var(--gold) !important;border-top-color:var(--gold) !important;background:linear-gradient(160deg,rgba(252,238,10,.08),rgba(12,14,28,.7) 55%) !important;}
+div[data-testid="stMetric"]:hover{border-color:var(--gold) !important;border-top-color:var(--gold) !important;}
 div[data-testid="stMetricValue"]{font-family:var(--mono) !important;font-weight:400 !important;font-size:1.95rem !important;letter-spacing:.5px;}
 div[data-testid="stMetricLabel"]{color:var(--muted) !important;letter-spacing:1px;}
 
@@ -183,83 +140,20 @@ details[data-testid="stExpander"]{
   background:var(--panel) !important;border:1px solid var(--line) !important;border-left:3px solid var(--cyan) !important;border-radius:0 !important;
   backdrop-filter:blur(6px);margin-bottom:10px !important;
 }
-details[data-testid="stExpander"] summary{font-weight:600;letter-spacing:.3px;}
-details[data-testid="stExpander"] summary:hover{color:var(--gold) !important;}
-details[data-testid="stExpander"][open]{border-left-color:var(--gold) !important;}
 
-div[data-testid="stAlert"]{border-radius:0 !important;border:1px solid var(--line) !important;border-left:3px solid var(--cyan) !important;backdrop-filter:blur(6px);}
-
-/* ตาราง */
-div[data-testid="stDataFrame"]{border:1px solid var(--line);border-radius:0;overflow:hidden;}
-.stMarkdown table{border-collapse:separate;border-spacing:0;width:100%;font-size:14px;border:1px solid var(--line);border-radius:0;overflow:hidden;}
-.stMarkdown th{background:rgba(0,240,255,.08);font-weight:700;text-align:left;color:var(--cyan);letter-spacing:.6px;}
-.stMarkdown td,.stMarkdown th{padding:8px 12px;border-bottom:1px solid var(--line);}
-.stMarkdown tr:last-child td{border-bottom:none;}
-
-/* ช่องกรอก */
-div[data-baseweb="input"] > div, div[data-baseweb="base-input"], div[data-baseweb="select"] > div,
-div[data-baseweb="textarea"], textarea{
-  background:#080a15 !important;border:1px solid var(--line) !important;border-bottom:2px solid rgba(0,240,255,.45) !important;border-radius:0 !important;
-}
-div[data-baseweb="input"]:focus-within > div, div[data-baseweb="textarea"]:focus-within,
-div[data-baseweb="select"]:focus-within > div{
-  border-color:var(--gold) !important;box-shadow:0 0 0 3px rgba(252,238,10,.13),0 0 18px rgba(252,238,10,.12) !important;
-}
-input, textarea{color:var(--text) !important;caret-color:var(--gold);}
-input[type="number"], div[data-baseweb="input"] input{font-family:var(--mono);}
-input::placeholder, textarea::placeholder{color:#4f5878 !important;}
-
-/* ปุ่ม: ทรงตัดมุม เหลืองนีออน (glow ทำที่ตัวห่อ เพราะ clip-path ตัดเงาของปุ่มเอง) */
+/* ปุ่ม */
 .stButton, .stDownloadButton{filter:drop-shadow(0 0 6px rgba(252,238,10,.28));transition:.15s;}
-.stButton:hover, .stDownloadButton:hover{filter:drop-shadow(0 0 11px rgba(0,240,255,.65));}
 .stButton > button, .stDownloadButton > button{
   background:var(--gold) !important;color:#05060d !important;font-weight:700 !important;
   border:none !important;border-radius:0 !important;letter-spacing:.8px;transition:.15s;
   clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
 }
 .stButton > button:hover, .stDownloadButton > button:hover{background:var(--cyan) !important;color:#05060d !important;}
-.stButton > button:active{background:var(--pink) !important;}
 .stButton > button p{color:#05060d !important;}
 
-/* แท็บ */
-button[data-baseweb="tab"]{font-weight:600;color:var(--muted);letter-spacing:.5px;}
-button[data-baseweb="tab"][aria-selected="true"]{color:var(--gold) !important;}
-div[data-baseweb="tab-highlight"]{background:var(--gold) !important;height:3px !important;border-radius:0;box-shadow:0 0 12px rgba(252,238,10,.6);}
-div[data-baseweb="tab-border"]{background:var(--line) !important;}
-
-hr{border-color:var(--line) !important;}
-
-/* กันข้อความในปุ่ม/ตัวเลือกถูกตัดเป็น "..." */
-[data-testid="stMain"] label[data-testid="stRadioOption"] p,
-.stButton > button p, .stDownloadButton > button p{
-  white-space:normal !important;overflow:visible !important;text-overflow:clip !important;line-height:1.25;
-}
-.stButton > button *, .stDownloadButton > button *,
-[data-testid="stMain"] label[data-testid="stRadioOption"] *{
-  white-space:normal !important;overflow:visible !important;text-overflow:clip !important;
-}
-.stButton > button, .stDownloadButton > button{height:auto !important;min-height:38px;padding:6px 10px !important;}
-[data-testid="stMain"] label[data-testid="stRadioOption"]{height:auto !important;max-width:100%;}
-
-/* ---------- แถบราคาเลื่อน ---------- */
-.tape{overflow:hidden;white-space:nowrap;border-top:1px solid var(--cyan);border-bottom:1px solid var(--line);background:rgba(0,240,255,.04);
-  padding:9px 0;margin-bottom:12px;mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);}
-.tape-track{display:inline-flex;animation:tape 55s linear infinite;}
-.tape:hover .tape-track{animation-play-state:paused;}
-@keyframes tape{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.tape-item{display:inline-flex;align-items:baseline;gap:8px;margin:0 22px;font-family:var(--mono);font-size:13.5px;}
-.tape-item b{color:#fff;font-weight:600;letter-spacing:.5px;}
-.tape-item .up{color:var(--up);text-shadow:0 0 8px rgba(25,245,165,.45)}
-.tape-item .down{color:var(--down);text-shadow:0 0 8px rgba(255,42,109,.45)}
-.tape-item .na{color:var(--muted)}
-
-@media (prefers-reduced-motion:reduce){
-  .tape-track, .app-header::after, .hero::after, .status .dot{animation:none !important;}
-}
-
-/* ---------- Boot (ขึ้นครั้งเดียวต่อเซสชัน) ---------- */
+/* ---------- หน้า Boot Sequence ---------- */
 .boot{position:fixed;inset:0;z-index:10000;background:#05060d;display:grid;place-items:center;cursor:pointer;
-  animation:bootOut .55s ease 14s forwards;  /* กันค้าง: ถ้าไม่มีใครกด จะจางหายเองหลัง 14 วินาที */
+  animation:bootOut .55s ease 14s forwards;
   background-image:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,240,255,.04) 3px);}
 .boot-in{font-family:var(--mono);font-size:14px;letter-spacing:1.2px;min-width:min(520px,86vw);}
 .boot .bl{white-space:nowrap;overflow:hidden;width:0;opacity:0;color:var(--cyan);margin:5px 0;
@@ -270,15 +164,12 @@ hr{border-color:var(--line) !important;}
 .boot.boot-out{animation:bootExit .85s cubic-bezier(.7,0,.3,1) forwards;pointer-events:none;}
 .boot.boot-out::after{animation:bootLine .85s ease forwards;}
 .boot.boot-out .boot-go{animation:goFlash .3s ease forwards;opacity:1;}
-@keyframes goFlash{0%{background:var(--gold);color:#05060d;box-shadow:0 0 0 rgba(252,238,10,0)}50%{background:#fff;color:#05060d;box-shadow:0 0 40px 10px rgba(252,238,10,.9);transform:scale(1.07)}100%{background:var(--gold);color:#05060d;transform:scale(1)}}
+@keyframes goFlash{0%{background:var(--gold);color:#05060d}50%{background:#fff;color:#05060d;transform:scale(1.07)}100%{background:var(--gold);color:#05060d}}
 @keyframes bootExit{
   0%{transform:none;filter:none;opacity:1}
-  14%{transform:translateX(-10px) skewX(4deg);filter:hue-rotate(60deg) saturate(2)}
-  28%{transform:translateX(12px) skewX(-3deg);filter:hue-rotate(-50deg)}
   40%{transform:none;filter:none;opacity:1}
   72%{transform:scaleY(.006);filter:brightness(2.2);opacity:1}
-  90%{transform:scaleY(.006) scaleX(.04);opacity:1}
-  100%{transform:scaleY(.006) scaleX(0);opacity:0;visibility:hidden}
+  100%{transform:scaleY(.006) scaleX(0);opacity:0;visibility:hidden;pointer-events:none;}
 }
 @keyframes bootLine{0%,40%{opacity:0}72%{opacity:1}100%{opacity:0}}
 .boot .boot-go{opacity:0;margin-top:24px;text-align:center;color:var(--gold);border:2px solid var(--gold);padding:10px 18px;
@@ -288,33 +179,21 @@ hr{border-color:var(--line) !important;}
 @keyframes goPulse{0%,100%{box-shadow:0 0 4px rgba(252,238,10,.35)}50%{box-shadow:0 0 18px rgba(0,240,255,.85)}}
 @keyframes bootOn{to{opacity:1}}
 @keyframes bootType{to{width:100%}}
-@keyframes bootOut{to{opacity:0;visibility:hidden}}
+@keyframes bootOut{to{opacity:0;visibility:hidden;pointer-events:none;}}
+
+/* ซ่อน container ของ boot ทิ้งทันทีเมื่ออนิเมชันจบเพื่อไม่ให้บล็อกคลิก */
+.boot.boot-out { display: none !important; }
 
 div[data-testid="stElementContainer"]:has(.boot), div[data-testid="element-container"]:has(.boot),
 div[data-testid="stElementContainer"]:has(iframe[height="0"]), div[data-testid="element-container"]:has(iframe[height="0"]){
   position:absolute !important;height:0 !important;margin:0 !important;overflow:visible !important;
 }
 
-/* ---------- ตัวเลขราคากะพริบเมื่อเปลี่ยน ---------- */
-.qs-up{animation:qsUp 1.1s ease-out;}
-.qs-down{animation:qsDown 1.1s ease-out;}
-@keyframes qsUp{0%{color:#fff;text-shadow:0 0 20px #19f5a5,0 0 6px #19f5a5;background:rgba(25,245,165,.22);}100%{background:transparent;text-shadow:none;}}
-@keyframes qsDown{0%{color:#fff;text-shadow:0 0 20px #ff2a6d,0 0 6px #ff2a6d;background:rgba(255,42,109,.22);}100%{background:transparent;text-shadow:none;}}
-
 /* ---------- แถบสถานะล่างจอ (HUD) ---------- */
 .hud{position:fixed;left:0;right:0;bottom:0;height:28px;z-index:9990;display:flex;align-items:center;gap:22px;padding:0 16px;
   background:rgba(5,6,13,.94);border-top:1px solid var(--cyan);box-shadow:0 -6px 24px rgba(0,240,255,.08);
   font-family:var(--mono);font-size:11.5px;letter-spacing:1px;color:var(--muted);white-space:nowrap;overflow:hidden;}
-.hud b{color:#fff;font-weight:400;}
-.hud .st{display:inline-flex;align-items:center;gap:7px;color:var(--c,#fcee0a);}
-.hud .st i{width:7px;height:7px;background:var(--c,#fcee0a);box-shadow:0 0 9px var(--c,#fcee0a);animation:pulse 1.6s infinite;}
-.hud .sp{flex:1;}
-.hud .u{color:var(--up);}.hud .d{color:var(--down);}
-.hud .tag{color:var(--cyan);}
 .block-container{padding-bottom:3.2rem !important;}
-section[data-testid="stSidebar"] > div{padding-bottom:34px;}
-@media (max-width:760px){.hud .hide-sm{display:none;}}
-@media (prefers-reduced-motion:reduce){.boot{display:none;} .qs-up,.qs-down{animation:none !important;}}
 </style>
 """
 
@@ -324,7 +203,6 @@ def _html(s: str) -> str:
 
 
 def ensure_streamlit_theme(app_dir) -> bool:
-    """สร้าง .streamlit/config.toml ถ้ายังไม่มี คืน True ถ้าเพิ่งสร้าง (ต้องรีสตาร์ทแอป 1 ครั้งให้ตารางเป็นสีเข้มจริง)"""
     try:
         folder = Path(app_dir) / ".streamlit"
         cfg = folder / "config.toml"
@@ -354,7 +232,7 @@ def hero(title: str, subtitle: str = "", pill: str = "LIVE"):
 
 
 BOOT_HTML = """
-<div class="boot"><div class="boot-in">
+<div class="boot" id="qs-boot-screen"><div class="boot-in">
 <div class="bl" style="--d:.15s">&gt; BOOT SEQUENCE ................ OK</div>
 <div class="bl" style="--d:.65s">&gt; LINKING NIGHT CITY MARKET FEED ... OK</div>
 <div class="bl" style="--d:1.15s">&gt; LOADING QUANT CORE v2077 ........ OK</div>
@@ -363,11 +241,27 @@ BOOT_HTML = """
 <div class="boot-go">[ ▶ ENTER NIGHT CITY ]</div>
 <div class="boot-hint">คลิกที่ใดก็ได้ หรือกด Enter เพื่อเข้าสู่ระบบ</div>
 </div></div>
+<script>
+(function(){
+  var scr = document.getElementById('qs-boot-screen');
+  if(!scr) return;
+  function dismiss(){
+    scr.classList.add('boot-out');
+    setTimeout(function(){ scr.style.display = 'none'; }, 900);
+  }
+  scr.addEventListener('click', dismiss);
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' || e.key === ' ') { dismiss(); }
+  });
+  // เผื่อกรณีไม่ได้กด ให้ซ่อนเองหลัง 14 วินาที
+  setTimeout(dismiss, 14000);
+})();
+</script>
 """
 
 
 def boot_once():
-    """หน้าบูตแบบเทอร์มินัล: แสดงครั้งเดียวต่อเซสชัน แล้วจางหายเอง"""
+    """หน้าบูตแบบเทอร์มินัล: แสดงครั้งเดียวต่อเซสชัน แล้วซ่อนตัวเองทันทีเมื่อคลิก"""
     try:
         if not st.session_state.get("_qs_booted"):
             st.session_state["_qs_booted"] = True
@@ -382,7 +276,6 @@ HUD_JS = r"""<!doctype html><html><body><script>
   try{ P=window.parent; D=P.document; }catch(e){ return; }
   var DATA=__DATA__;
   function esc(x){return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  // ---- HUD ล่างจอ ----
   var h=D.getElementById('qs-hud');
   if(!h){ h=D.createElement('div'); h.id='qs-hud'; h.className='hud'; D.body.appendChild(h); }
   function tm(tz){ try{return new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());}catch(e){return '--:--:--';} }
@@ -411,33 +304,11 @@ HUD_JS = r"""<!doctype html><html><body><script>
   }
   try{ if(P.__qsHud) P.clearInterval(P.__qsHud); }catch(e){}
   render(); P.__qsHud=P.setInterval(function(){ try{render();}catch(e){} },1000);
-
-  // ---- ตัวเลขราคากะพริบเมื่อเปลี่ยน ----
-  function num(el){ return parseFloat((el.textContent||'').replace(/[^0-9.\-]/g,'')); }
-  function seed(){ D.querySelectorAll('[data-testid="stMetricValue"]').forEach(function(el){ if(el.__qv==null) el.__qv=num(el); }); }
-  seed();
-  try{ if(P.__qsObs) P.__qsObs.disconnect(); }catch(e){}
-  var obs=new P.MutationObserver(function(ms){
-    ms.forEach(function(m){
-      var el=m.target.nodeType===3?m.target.parentElement:m.target;
-      if(!el||!el.closest) return;
-      var mv=el.closest('[data-testid="stMetricValue"]'); if(!mv) return;
-      var n=num(mv), old=mv.__qv; mv.__qv=n;
-      if(old!=null && !isNaN(n) && !isNaN(old) && n!==old){
-        mv.classList.remove('qs-up','qs-down'); void mv.offsetWidth; mv.classList.add(n>old?'qs-up':'qs-down');
-        P.setTimeout(function(){ mv.classList.remove('qs-up','qs-down'); },1200);
-      }
-    });
-    seed();
-  });
-  obs.observe(D.body,{subtree:true,childList:true,characterData:true});
-  P.__qsObs=obs;
 })();
 </script></body></html>"""
 
 
 def hud(markets: dict = None):
-    """แถบสถานะล่างจอ (นาฬิกาไทย/นิวยอร์ก, สถานะตลาด, ดัชนีหลัก) + ตัวเลขราคากะพริบเมื่อเปลี่ยน"""
     try:
         import json
         import streamlit.components.v1 as components
@@ -450,7 +321,6 @@ def hud(markets: dict = None):
 
 
 def market_status():
-    """สถานะตลาดสหรัฐ (ไม่รวมวันหยุดพิเศษ) พร้อมเวลาไทย"""
     try:
         from zoneinfo import ZoneInfo
         ny = datetime.now(ZoneInfo("America/New_York"))
@@ -584,7 +454,6 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
 
 
 def music_player():
-    """เครื่องเล่นเพลงพื้นหลัง: เสถียรและไม่แสดงข้อความ Error สีแดงเมื่อโหลดไฟล์"""
     try:
         import streamlit.components.v1 as components
         components.html(MUSIC_HTML, height=112)
@@ -607,7 +476,6 @@ def brand_sidebar():
 
 
 def ticker_tape(markets: dict):
-    """markets: {ชื่อ: (ราคา, %เปลี่ยน) หรือ None}"""
     items = ""
     for name, v in markets.items():
         if v:
