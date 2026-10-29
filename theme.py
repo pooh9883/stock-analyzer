@@ -3,7 +3,7 @@
 theme.py
 ========
 ดีไซน์ทั้งเว็บ: สไตล์ Cyberpunk (เหลือง-ฟ้า-ชมพูนีออน มุมตัด สแกนไลน์ ตัวเลขฟอนต์โมโน)
-ระบบ Boot Sequence เต็มจอคลุมทับ และคลิกเปิด Dashboard พร้อมเล่นเพลงทันทีโดยไม่ต้องรีโหลด
+ระบบ Boot Sequence เต็มจอคลุมทับ และคลิกเปิด Dashboard พร้อมเล่นเพลงทันที
 """
 
 from datetime import datetime
@@ -300,7 +300,6 @@ BOOT_COMPONENT = """
   var scr = document.getElementById('screen');
   
   function launch(){
-    // สั่งให้เล่นเพลงผ่าน Parent window ทันที
     try {
       if(window.parent && window.parent.__qs && window.parent.__qs.play) {
         window.parent.__qs.play();
@@ -309,19 +308,18 @@ BOOT_COMPONENT = """
 
     scr.classList.add('fade-out');
     
-    // แจ้ง Streamlit ผ่าน Custom Event หรือสั่งซ่อน iframe ทันที
     setTimeout(function(){
-      scr.style.display = 'none';
       try {
-        // ค้นหาและลบ iframe ของ component นี้จาก parent DOM เพื่อเปิดเผย Dashboard ด้านหลัง
-        var frames = window.parent.document.querySelectorAll('iframe');
-        frames.forEach(function(f){
-          if(f.contentWindow === window){
-            var container = f.closest('[data-testid="stElementContainer"]') || f.parentElement;
-            if(container) container.style.display = 'none';
-          }
-        });
+        if(window.parent && window.parent.streamlitEmit) {
+          window.parent.streamlitEmit('set_state', {key: '_qs_booted', value: true});
+        }
       } catch(e) {}
+      // รีโหลดหน้าเพื่อให้ Streamlit เรนเดอร์ Dashboard เต็มรูปแบบ
+      try {
+        window.parent.location.reload();
+      } catch(e) {
+        window.location.reload();
+      }
     }, 550);
   }
 
@@ -336,15 +334,16 @@ BOOT_COMPONENT = """
 
 
 def boot_once():
-    """แสดงหน้าจอ Boot เต็มจอเฉพาะครั้งแรก โดยไม่บล็อก Streamlit Session State ด้านหลัง"""
-    try:
-        if not st.session_state.get("_qs_booted", False):
-            st.session_state["_qs_booted"] = True
-            import streamlit.components.v1 as components
-            # เรนเดอร์คอมโพเนนต์แบบเต็มจอคลุมทับทุกอย่าง
-            components.html(BOOT_COMPONENT, height=1, scrolling=False)
-    except Exception:
-        pass
+    """แสดงหน้าจอ Boot แบบเต็มจอเฉพาะเมื่อยังไม่เคยเข้าสู่ระบบในเซสชันนี้"""
+    if not st.session_state.get("_qs_booted", False):
+        import streamlit.components.v1 as components
+        
+        # สร้าง Placeholder เต็มหน้าจอเพื่อเคลียร์เนื้อหาอื่นชั่วคราว
+        placeholder = st.empty()
+        with placeholder.container():
+            # เรนเดอร์หน้า Boot ครอบทับทุกอย่างด้วยความสูงเต็มจอเบราว์เซอร์
+            components.html(BOOT_COMPONENT, height=850, scrolling=False)
+            st.stop()
 
 
 def hero(title: str, subtitle: str = "", pill: str = "LIVE"):
@@ -457,9 +456,9 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   var b=document.getElementById('b'), v=document.getElementById('v'), eq=document.getElementById('eq'), nm=document.getElementById('nm'), nx=document.getElementById('nx');
 
   var CODE = "(" + function(){
-    if(window.__qs && window.__qs.v===10) return;
+    if(window.__qs && window.__qs.v===11) return;
     var T=[{n:'Let You Down',u:'app/static/bgm_2.mp3'},{n:'wiv — i love u',u:'app/static/bgm_1.mp3'}];
-    var S=window.__qs={v:10,ti:0,au:null,playing:false,vol:0.35,tracks:T};
+    var S=window.__qs={v:11,ti:0,au:null,playing:false,vol:0.35,tracks:T};
     var ls=null; try{ ls=window.localStorage; }catch(e){}
     function get(k){ try{return ls&&ls.getItem(k);}catch(e){return null;} }
     function set(k,x){ try{ ls&&ls.setItem(k,x); }catch(e){} }
@@ -510,7 +509,7 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   }.toString() + ")();";
 
   try{
-    if(P){ if(!P.__qs || P.__qs.v!==10){ P.eval(CODE); } }
+    if(P){ if(!P.__qs || P.__qs.v!==11){ P.eval(CODE); } }
   }catch(e){
     try{ var sc=P.document.createElement('script'); sc.textContent=CODE; P.document.head.appendChild(sc); }catch(e2){}
   }
