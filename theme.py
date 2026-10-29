@@ -151,49 +151,23 @@ details[data-testid="stExpander"]{
 .stButton > button:hover, .stDownloadButton > button:hover{background:var(--cyan) !important;color:#05060d !important;}
 .stButton > button p{color:#05060d !important;}
 
-/* ---------- หน้า Boot Sequence ---------- */
-.boot{position:fixed;inset:0;z-index:10000;background:#05060d;display:grid;place-items:center;cursor:pointer;
-  animation:bootOut .55s ease 14s forwards;
-  background-image:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,240,255,.04) 3px);}
-.boot-in{font-family:var(--mono);font-size:14px;letter-spacing:1.2px;min-width:min(520px,86vw);}
-.boot .bl{white-space:nowrap;overflow:hidden;width:0;opacity:0;color:var(--cyan);margin:5px 0;
-  animation:bootOn 0s var(--d) forwards, bootType .5s steps(46,end) var(--d) forwards;}
-.boot .bl.ok{color:var(--gold);text-shadow:2px 0 rgba(255,42,109,.8),-2px 0 rgba(0,240,255,.8);font-size:17px;font-weight:700;margin-top:12px;}
-.boot::after{content:"";position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1px;background:#fff;
-  box-shadow:0 0 22px 4px var(--cyan),0 0 50px 10px rgba(0,240,255,.5);opacity:0;}
-.boot.boot-out{animation:bootExit .85s cubic-bezier(.7,0,.3,1) forwards;pointer-events:none;}
-.boot.boot-out::after{animation:bootLine .85s ease forwards;}
-.boot.boot-out .boot-go{animation:goFlash .3s ease forwards;opacity:1;}
-@keyframes goFlash{0%{background:var(--gold);color:#05060d}50%{background:#fff;color:#05060d;transform:scale(1.07)}100%{background:var(--gold);color:#05060d}}
-@keyframes bootExit{
-  0%{transform:none;filter:none;opacity:1}
-  40%{transform:none;filter:none;opacity:1}
-  72%{transform:scaleY(.006);filter:brightness(2.2);opacity:1}
-  100%{transform:scaleY(.006) scaleX(0);opacity:0;visibility:hidden;pointer-events:none;}
-}
-@keyframes bootLine{0%,40%{opacity:0}72%{opacity:1}100%{opacity:0}}
-.boot .boot-go{opacity:0;margin-top:24px;text-align:center;color:var(--gold);border:2px solid var(--gold);padding:10px 18px;
-  font-weight:700;letter-spacing:4px;font-size:15px;animation:bootOn 0s 2.5s forwards, goPulse 1.3s ease-in-out 2.5s infinite;}
-.boot:hover .boot-go{background:var(--gold);color:#05060d;}
-.boot .boot-hint{opacity:0;margin-top:10px;text-align:center;color:var(--muted);font-size:11.5px;letter-spacing:1px;animation:bootOn 0s 2.7s forwards;}
-@keyframes goPulse{0%,100%{box-shadow:0 0 4px rgba(252,238,10,.35)}50%{box-shadow:0 0 18px rgba(0,240,255,.85)}}
-@keyframes bootOn{to{opacity:1}}
-@keyframes bootType{to{width:100%}}
-@keyframes bootOut{to{opacity:0;visibility:hidden;pointer-events:none;}}
-
-/* ซ่อน container ของ boot ทิ้งทันทีเมื่ออนิเมชันจบเพื่อไม่ให้บล็อกคลิก */
-.boot.boot-out { display: none !important; }
-
-div[data-testid="stElementContainer"]:has(.boot), div[data-testid="element-container"]:has(.boot),
-div[data-testid="stElementContainer"]:has(iframe[height="0"]), div[data-testid="element-container"]:has(iframe[height="0"]){
-  position:absolute !important;height:0 !important;margin:0 !important;overflow:visible !important;
-}
+/* ---------- แถบราคาเลื่อน ---------- */
+.tape{overflow:hidden;white-space:nowrap;border-top:1px solid var(--cyan);border-bottom:1px solid var(--line);background:rgba(0,240,255,.04);
+  padding:9px 0;margin-bottom:12px;mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);}
+.tape-track{display:inline-flex;animation:tape 55s linear infinite;}
+.tape:hover .tape-track{animation-play-state:paused;}
+@keyframes tape{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.tape-item{display:inline-flex;align-items:baseline;gap:8px;margin:0 22px;font-family:var(--mono);font-size:13.5px;}
+.tape-item b{color:#fff;font-weight:600;letter-spacing:.5px;}
+.tape-item .up{color:var(--up);text-shadow:0 0 8px rgba(25,245,165,.45)}
+.tape-item .down{color:var(--down);text-shadow:0 0 8px rgba(255,42,109,.45)}
+.tape-item .na{color:var(--muted)}
 
 /* ---------- แถบสถานะล่างจอ (HUD) ---------- */
 .hud{position:fixed;left:0;right:0;bottom:0;height:28px;z-index:9990;display:flex;align-items:center;gap:22px;padding:0 16px;
   background:rgba(5,6,13,.94);border-top:1px solid var(--cyan);box-shadow:0 -6px 24px rgba(0,240,255,.08);
   font-family:var(--mono);font-size:11.5px;letter-spacing:1px;color:var(--muted);white-space:nowrap;overflow:hidden;}
-.block-container{padding-bottom:3.2rem !important;}
+.block-container{padding-bottom:3.2rem !important; min-height: 100vh;}
 </style>
 """
 
@@ -231,41 +205,147 @@ def hero(title: str, subtitle: str = "", pill: str = "LIVE"):
     """), unsafe_allow_html=True)
 
 
-BOOT_HTML = """
-<div class="boot" id="qs-boot-screen"><div class="boot-in">
-<div class="bl" style="--d:.15s">&gt; BOOT SEQUENCE ................ OK</div>
-<div class="bl" style="--d:.65s">&gt; LINKING NIGHT CITY MARKET FEED ... OK</div>
-<div class="bl" style="--d:1.15s">&gt; LOADING QUANT CORE v2077 ........ OK</div>
-<div class="bl" style="--d:1.65s">&gt; SYNCING NEURAL SCANNER .......... OK</div>
-<div class="bl ok" style="--d:2.05s">&gt; ACCESS GRANTED</div>
-<div class="boot-go">[ ▶ ENTER NIGHT CITY ]</div>
-<div class="boot-hint">คลิกที่ใดก็ได้ หรือกด Enter เพื่อเข้าสู่ระบบ</div>
-</div></div>
-<script>
-(function(){
-  var scr = document.getElementById('qs-boot-screen');
-  if(!scr) return;
-  function dismiss(){
-    scr.classList.add('boot-out');
-    setTimeout(function(){ scr.style.display = 'none'; }, 900);
+BOOT_COMPONENT = """
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body {
+    margin: 0;
+    background: #05060d;
+    font-family: 'Share Tech Mono', 'IBM Plex Mono', monospace;
+    color: #00f0ff;
+    overflow: hidden;
   }
-  scr.addEventListener('click', dismiss);
+  .boot {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: #05060d;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,240,255,.04) 3px);
+  }
+  .boot-in {
+    font-size: 14px;
+    letter-spacing: 1.2px;
+    width: min(520px, 86vw);
+  }
+  .bl {
+    white-space: nowrap;
+    overflow: hidden;
+    width: 0;
+    opacity: 0;
+    color: var(--cyan, #00f0ff);
+    margin: 5px 0;
+    animation: bootOn 0s var(--d) forwards, bootType 0.4s steps(46, end) var(--d) forwards;
+  }
+  .bl.ok {
+    color: #fcee0a;
+    text-shadow: 2px 0 rgba(255,42,109,.8), -2px 0 rgba(0,240,255,.8);
+    font-size: 17px;
+    font-weight: 700;
+    margin-top: 12px;
+  }
+  .boot-go {
+    opacity: 0;
+    margin-top: 24px;
+    text-align: center;
+    color: #05060d;
+    background: #fcee0a;
+    border: 2px solid #fcee0a;
+    padding: 12px 18px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    font-size: 15px;
+    cursor: pointer;
+    animation: bootOn 0s 2.5s forwards, goPulse 1.3s ease-in-out 2.5s infinite;
+  }
+  .boot-go:hover {
+    background: #00f0ff;
+    border-color: #00f0ff;
+    box-shadow: 0 0 25px rgba(0,240,255,0.8);
+  }
+  .boot-hint {
+    opacity: 0;
+    margin-top: 10px;
+    text-align: center;
+    color: #7d86a6;
+    font-size: 11.5px;
+    letter-spacing: 1px;
+    animation: bootOn 0s 2.7s forwards;
+  }
+  @keyframes goPulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(252,238,10,.35); }
+    50% { box-shadow: 0 0 18px rgba(0,240,255,.85); }
+  }
+  @keyframes bootOn { to { opacity: 1; } }
+  @keyframes bootType { to { width: 100%; } }
+  .fade-out {
+    animation: bootExit 0.7s cubic-bezier(.7, 0, .3, 1) forwards;
+  }
+  @keyframes bootExit {
+    0% { transform: none; filter: none; opacity: 1; }
+    50% { transform: scaleY(.006); filter: brightness(2.2); opacity: 1; }
+    100% { transform: scaleY(.006) scaleX(0); opacity: 0; visibility: hidden; }
+  }
+</style>
+</head>
+<body>
+<div class="boot" id="screen">
+  <div class="boot-in">
+    <div class="bl" style="--d:.15s">&gt; BOOT SEQUENCE ................ OK</div>
+    <div class="bl" style="--d:.65s">&gt; LINKING NIGHT CITY MARKET FEED ... OK</div>
+    <div class="bl" style="--d:1.15s">&gt; LOADING QUANT CORE v2077 ........ OK</div>
+    <div class="bl" style="--d:1.65s">&gt; SYNCING NEURAL SCANNER .......... OK</div>
+    <div class="bl ok" style="--d:2.05s">&gt; ACCESS GRANTED</div>
+    <div class="boot-go" id="enter-btn">[ ▶ ENTER NIGHT CITY ]</div>
+    <div class="boot-hint">คลิกปุ่มเพื่อเข้าสู่ระบบและเริ่มสตรีมเสียง</div>
+  </div>
+</div>
+<script>
+  var btn = document.getElementById('enter-btn');
+  var scr = document.getElementById('screen');
+  
+  function launch(){
+    // สั่งให้หน้าต่างหลัก (Parent) เล่นเพลงทันทีผ่าน JavaScript ควบคุม Audio
+    try {
+      if(window.parent && window.parent.__qs && window.parent.__qs.play) {
+        window.parent.__qs.play();
+      }
+    } catch(e) {}
+
+    scr.classList.add('fade-out');
+    setTimeout(function(){
+      scr.style.display = 'none';
+      // แจ้ง Parent ให้ซ่อน iframe นี้ผ่านความสูง
+      try {
+        if(window.parent && window.parent.postMessage) {
+          window.parent.postMessage({type: 'remove_boot'}, '*');
+        }
+      } catch(e){}
+    }, 700);
+  }
+
+  btn.addEventListener('click', launch);
   document.addEventListener('keydown', function(e){
-    if(e.key === 'Enter' || e.key === ' ') { dismiss(); }
+    if(e.key === 'Enter' || e.key === ' ') { launch(); }
   });
-  // เผื่อกรณีไม่ได้กด ให้ซ่อนเองหลัง 14 วินาที
-  setTimeout(dismiss, 14000);
-})();
 </script>
+</body>
+</html>
 """
 
 
 def boot_once():
-    """หน้าบูตแบบเทอร์มินัล: แสดงครั้งเดียวต่อเซสชัน แล้วซ่อนตัวเองทันทีเมื่อคลิก"""
+    """หน้าบูตแยกเป็น Component อิสระเต็มจอ คลิกปุ่มปุ๊บหายไปพร้อมเพลงขึ้นทันที"""
     try:
         if not st.session_state.get("_qs_booted"):
             st.session_state["_qs_booted"] = True
-            st.markdown(BOOT_HTML, unsafe_allow_html=True)
+            import streamlit.components.v1 as components
+            components.html(BOOT_COMPONENT, height=800, scrolling=False)
     except Exception:
         pass
 
@@ -369,9 +449,9 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   var b=document.getElementById('b'), v=document.getElementById('v'), eq=document.getElementById('eq'), nm=document.getElementById('nm'), nx=document.getElementById('nx');
 
   var CODE = "(" + function(){
-    if(window.__qs && window.__qs.v===6) return;
+    if(window.__qs && window.__qs.v===7) return;
     var T=[{n:'Let You Down',u:'app/static/bgm_2.mp3'},{n:'wiv — i love u',u:'app/static/bgm_1.mp3'}];
-    var S=window.__qs={v:6,ti:0,au:null,playing:false,vol:0.35,tracks:T};
+    var S=window.__qs={v:7,ti:0,au:null,playing:false,vol:0.35,tracks:T};
     var ls=null; try{ ls=window.localStorage; }catch(e){}
     function get(k){ try{return ls&&ls.getItem(k);}catch(e){return null;} }
     function set(k,x){ try{ ls&&ls.setItem(k,x); }catch(e){} }
@@ -422,7 +502,7 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   }.toString() + ")();";
 
   try{
-    if(P){ if(!P.__qs || P.__qs.v!==6){ P.eval(CODE); } }
+    if(P){ if(!P.__qs || P.__qs.v!==7){ P.eval(CODE); } }
   }catch(e){
     try{ var sc=P.document.createElement('script'); sc.textContent=CODE; P.document.head.appendChild(sc); }catch(e2){}
   }
