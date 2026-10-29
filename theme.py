@@ -30,7 +30,7 @@ font = "sans serif"
 toolbarMode = "minimal"
 
 [browser]
-gatherUsageStats = true
+gatherUsageStats = false
 
 [server]
 enableStaticServing = true
