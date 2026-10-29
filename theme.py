@@ -30,7 +30,7 @@ font = "sans serif"
 toolbarMode = "minimal"
 
 [browser]
-gatherUsageStats = true
+gatherUsageStats = false
 
 [server]
 enableStaticServing = true
@@ -502,19 +502,19 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
 
   // ตัวเล่นเพลงอยู่ที่หน้าต่างหลัก (ไม่ใช่ใน iframe) เพื่อให้เพลงเล่นต่อเนื่อง ไม่เริ่มใหม่เวลา Streamlit รีโหลดหน้า
   var CODE = "(" + function(){
-    if(window.__qs && window.__qs.v===5) return;
-    var T=[{n:'Let You Down',u:'/app/static/bgm_2.mp3'},{n:'wiv — i love u (slowed + reverb)',u:'/app/static/bgm_1.mp3'}];
-    var S=window.__qs={v:5,ti:0,au:null,playing:false,err:false,vol:0.35,subs:[],tracks:T,armed:false};
+    if(window.__qs && window.__qs.v===6) return;
+    var T=[{n:'Let You Down',u:'/static/bgm_2.mp3'},{n:'wiv — i love u (slowed + reverb)',u:'/static/bgm_1.mp3'}];
+    var S=window.__qs={v:6,ti:0,au:null,playing:false,err:false,vol:0.35,subs:[],tracks:T,armed:false};
     var ls=null; try{ ls=window.localStorage; }catch(e){}
-    function get(k){ try{return ls&&ls.getItem(k);}catch(e){return null;} }
-    function set(k,x){ try{ ls&&ls.setItem(k,x); }catch(e){} }
+    var get = function(k){ try{return ls&&ls.getItem(k);}catch(e){return null;} };
+    var set = function(k,x){ try{ ls&&ls.setItem(k,x); }catch(e){} };
     var sv=get('bgm_vol'); if(sv!==null && !isNaN(parseFloat(sv))) S.vol=parseFloat(sv)/100;
     S.off = get('bgm_off')==='1';
-    function vol(){ return Math.pow(S.vol,1.6); }
-    S.emit=function(){ S.subs.forEach(function(f){ try{f();}catch(e){} }); };
-    function drop(x){ try{ x.onended=null; x.onerror=null; x.pause(); x.removeAttribute('src'); x.load(); }catch(e){} }
-    function kill(){ if(S.au){ drop(S.au); S.au=null; } }
-    S.start=function(){
+    var vol = function(){ return Math.pow(S.vol,1.6); };
+    S.emit = function(){ S.subs.forEach(function(f){ try{f();}catch(e){} }); };
+    var drop = function(x){ try{ x.onended=null; x.onerror=null; x.pause(); x.removeAttribute('src'); x.load(); }catch(e){} };
+    var kill = function(){ if(S.au){ drop(S.au); S.au=null; } };
+    S.start = function(){
       kill(); var a=new Audio(T[S.ti].u); S.au=a; a.volume=vol(); a.preload='auto';
       a.onended=function(){ S.ti=(S.ti+1)%T.length; S.start(); };
       a.onerror=function(){ if(S.au!==a) return; S.au=null; S.playing=false; S.err=true; S.emit(); };
@@ -525,51 +525,49 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
       }
       S.emit();
     };
-    S.play=function(){ S.off=false; set('bgm_off','0'); S.err=false; S.start(); };
-    S.stop=function(){ S.off=true; set('bgm_off','1'); kill(); S.playing=false; S.emit(); };
-    S.next=function(){ var was=S.playing; kill(); S.playing=false; S.ti=(S.ti+1)%T.length; if(was) S.start(); else S.emit(); };
-    S.setVol=function(x){ S.vol=x; set('bgm_vol',String(Math.round(x*100))); if(S.au) S.au.volume=vol(); };
-    // เบราว์เซอร์บล็อกเสียงอัตโนมัติ: ถ้าเล่นเองไม่ได้ จะเริ่มเล่นตอนผู้ใช้คลิก/กดแป้นครั้งแรกที่ไหนก็ได้ในหน้า
-    S.arm=function(){
+    S.play = function(){ S.off=false; set('bgm_off','0'); S.err=false; S.start(); };
+    S.stop = function(){ S.off=true; set('bgm_off','1'); kill(); S.playing=false; S.emit(); };
+    S.next = function(){ var was=S.playing; kill(); S.playing=false; S.ti=(S.ti+1)%T.length; if(was) S.start(); else S.emit(); };
+    S.setVol = function(x){ S.vol=x; set('bgm_vol',String(Math.round(x*100))); if(S.au) S.au.volume=vol(); };
+    S.arm = function(){
       if(S.armed) return; S.armed=true;
       var evs=['pointerdown','keydown','touchstart'];
-      function h(){ evs.forEach(function(e){ document.removeEventListener(e,h,true); }); S.armed=false; if(!S.off && !S.playing && !S.au) S.play(); }
+      var h = function(){ evs.forEach(function(e){ document.removeEventListener(e,h,true); }); S.armed=false; if(!S.off && !S.playing && !S.au) S.play(); };
       evs.forEach(function(e){ document.addEventListener(e,h,true); });
     };
-    S.auto=function(){ if(!S.off && !S.playing && !S.au) S.start(); };
-    // หน้าบูต: กดเข้าระบบ (คลิก / Enter) = ปิดหน้าบูต + เริ่มเพลงพร้อมกัน (การคลิกนี้คือสิ่งที่เบราว์เซอร์ต้องการเพื่อเปิดเสียง)
-    function enter(b){
+    S.auto = function(){ if(!S.off && !S.playing && !S.au) S.start(); };
+    var enter = function(b){
       b.classList.add('boot-out');
-      S.off=false; set('bgm_off','0');            // กดเข้าระบบ = ตั้งใจเปิดเพลง (แม้เคยกด STOP ไว้)
+      S.off=false; set('bgm_off','0');
       if(!S.playing && !S.au) S.play();
-    }
+    };
     try{ document.removeEventListener('click',window.__qsClickH,true); document.removeEventListener('keydown',window.__qsKeyH,true); }catch(e){}
-    window.__qsClickH=function(e){ var b=e.target&&e.target.closest&&e.target.closest('.boot'); if(b && !b.classList.contains('boot-out')) enter(b); };
-    window.__qsKeyH=function(e){
+    window.__qsClickH = function(e){ var b=e.target&&e.target.closest&&e.target.closest('.boot'); if(b && !b.classList.contains('boot-out')) enter(b); };
+    window.__qsKeyH = function(e){
       if(e.key==='Enter'||e.key===' '){ var b=document.querySelector('.boot:not(.boot-out)'); if(b){ e.preventDefault(); enter(b); } }
     };
     document.addEventListener('click',window.__qsClickH,true);
     document.addEventListener('keydown',window.__qsKeyH,true);
   }.toString() + ")();";
   try{
-    if(P){ if(!P.__qs || P.__qs.v!==5){ P.eval(CODE); } }
+    if(P){ if(!P.__qs || P.__qs.v!==6){ P.eval(CODE); } }
   }catch(e){
     try{ var sc=P.document.createElement('script'); sc.textContent=CODE; P.document.head.appendChild(sc); }catch(e2){}
   }
   var S=P&&P.__qs;
   if(!S){ nm.className='n err'; nm.textContent='เครื่องเล่นใช้ไม่ได้ในเบราว์เซอร์นี้'; return; }
   v.value=Math.round(S.vol*100);
-  function render(){
+  var render = function(){
     var on=S.playing;
     b.textContent=on?'■ STOP':'▶ PLAY'; b.className=on?'on':''; eq.className=on?'eq play':'eq';
     if(S.err){ nm.className='n err'; nm.textContent='ไม่พบไฟล์เพลง: ตรวจโฟลเดอร์ static/ และ enableStaticServing ใน .streamlit/config.toml แล้วรีสตาร์ตแอป'; }
     else{ nm.className='n'; nm.textContent=S.tracks[S.ti].n; }
-  }
+  };
   S.subs=[render]; render();
-  b.onclick=function(){ S.playing?S.stop():S.play(); };
-  nx.onclick=function(){ S.next(); };
-  v.oninput=function(){ S.setVol(v.value/100); };
-  S.auto();   // พยายามเล่นเองทุกครั้งที่เข้าเว็บ (ถ้าถูกบล็อก จะเล่นตอนคลิกครั้งแรก)
+  b.onclick = function(){ S.playing?S.stop():S.play(); };
+  nx.onclick = function(){ S.next(); };
+  v.oninput = function(){ S.setVol(v.value/100); };
+  S.auto();
 })();
 </script></body></html>"""
 
