@@ -324,7 +324,7 @@ def _html(s: str) -> str:
 
 
 def ensure_streamlit_theme(app_dir) -> bool:
-    """สร้าง .streamlit/config.toml ถ้ายังไม่มี คืน True ถ้าเพิ่งสร้าง (ต้องรีสตาร์ทแอป 1 ครั้งให้ตารางเป็นสีเข้ม)"""
+    """สร้าง .streamlit/config.toml ถ้ายังไม่มี คืน True ถ้าเพิ่งสร้าง (ต้องรีสตาร์ทแอป 1 ครั้งให้ตารางเป็นสีเข้มจริง)"""
     try:
         folder = Path(app_dir) / ".streamlit"
         cfg = folder / "config.toml"
@@ -449,7 +449,6 @@ def hud(markets: dict = None):
         pass
 
 
-
 def market_status():
     """สถานะตลาดสหรัฐ (ไม่รวมวันหยุดพิเศษ) พร้อมเวลาไทย"""
     try:
@@ -478,7 +477,6 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   .box{border:1px solid rgba(0,240,255,.2);border-left:3px solid #fcee0a;background:rgba(12,14,28,.78);padding:9px 11px 10px;}
   .t{font-size:10px;letter-spacing:2.2px;color:#00f0ff;display:flex;justify-content:space-between;align-items:center;}
   .n{font-size:12.5px;font-weight:600;margin:3px 0 7px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .n.err{color:#ff2a6d;white-space:normal;font-size:11.5px;line-height:1.3;}
   .row{display:flex;align-items:center;gap:9px;}
   button{background:#fcee0a;color:#05060d;border:0;font:700 12px 'Chakra Petch',sans-serif;letter-spacing:1px;padding:6px 12px;cursor:pointer;
     clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));min-width:74px;}
@@ -492,7 +490,7 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
 </style></head><body>
 <div class="box">
   <div class="t"><span>NIGHT CITY FM</span><span class="eq" id="eq"><i></i><i></i><i></i><i></i><i></i></span></div>
-  <div class="n" id="nm">—</div>
+  <div class="n" id="nm">Let You Down</div>
   <div class="row"><button id="b">▶ PLAY</button><button id="nx" title="เพลงถัดไป" style="min-width:34px;padding:6px 8px">⏭</button><input id="v" type="range" min="0" max="100" value="35" title="ระดับเสียง"></div>
 </div>
 <script>
@@ -500,82 +498,93 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   var P=null; try{ P=window.parent; void P.document; }catch(e){ P=null; }
   var b=document.getElementById('b'), v=document.getElementById('v'), eq=document.getElementById('eq'), nm=document.getElementById('nm'), nx=document.getElementById('nx');
 
-  // ตัวเล่นเพลงอยู่ที่หน้าต่างหลัก (ไม่ใช่ใน iframe) เพื่อให้เพลงเล่นต่อเนื่อง ไม่เริ่มใหม่เวลา Streamlit รีโหลดหน้า
   var CODE = "(" + function(){
-    if(window.__qs && window.__qs.v===5) return;
-    var T=[{n:'Let You Down',u:'/app/static/bgm_2.mp3'},{n:'wiv — i love u (slowed + reverb)',u:'/app/static/bgm_1.mp3'}];
-    var S=window.__qs={v:5,ti:0,au:null,playing:false,err:false,vol:0.35,subs:[],tracks:T,armed:false};
+    if(window.__qs && window.__qs.v===6) return;
+    var T=[{n:'Let You Down',u:'app/static/bgm_2.mp3'},{n:'wiv — i love u',u:'app/static/bgm_1.mp3'}];
+    var S=window.__qs={v:6,ti:0,au:null,playing:false,vol:0.35,tracks:T};
     var ls=null; try{ ls=window.localStorage; }catch(e){}
     function get(k){ try{return ls&&ls.getItem(k);}catch(e){return null;} }
     function set(k,x){ try{ ls&&ls.setItem(k,x); }catch(e){} }
     var sv=get('bgm_vol'); if(sv!==null && !isNaN(parseFloat(sv))) S.vol=parseFloat(sv)/100;
-    S.off = get('bgm_off')==='1';
-    function vol(){ return Math.pow(S.vol,1.6); }
-    S.emit=function(){ S.subs.forEach(function(f){ try{f();}catch(e){} }); };
-    function drop(x){ try{ x.onended=null; x.onerror=null; x.pause(); x.removeAttribute('src'); x.load(); }catch(e){} }
-    function kill(){ if(S.au){ drop(S.au); S.au=null; } }
-    S.start=function(){
-      kill(); var a=new Audio(T[S.ti].u); S.au=a; a.volume=vol(); a.preload='auto';
-      a.onended=function(){ S.ti=(S.ti+1)%T.length; S.start(); };
-      a.onerror=function(){ if(S.au!==a) return; S.au=null; S.playing=false; S.err=true; S.emit(); };
-      var p=a.play();
-      if(p && p.then){
-        p.then(function(){ if(S.au===a){ S.playing=true; S.err=false; S.emit(); } })
-         .catch(function(e){ if(S.au===a){ drop(a); S.au=null; S.playing=false; S.emit(); if(e && e.name==='NotAllowedError') S.arm(); } });
-      }
+    S.emit=function(){ if(S.onUpdate) S.onUpdate(); };
+    
+    S.init=function(){
+      if(S.au) return;
+      var a = new Audio(T[S.ti].u);
+      S.au = a;
+      a.loop = false;
+      a.volume = S.vol;
+      a.onended = function(){ S.ti=(S.ti+1)%T.length; S.load(); S.play(); };
+    };
+    
+    S.load=function(){
+      if(!S.au) S.init();
+      S.au.src = T[S.ti].u;
+      S.au.load();
+    };
+
+    S.play=function(){
+      S.init();
+      S.au.play().then(function(){
+        S.playing=true; S.emit();
+      }).catch(function(e){
+        S.playing=false; S.emit();
+      });
+    };
+
+    S.stop=function(){
+      if(S.au) S.au.pause();
+      S.playing=false; S.emit();
+    };
+
+    S.next=function(){
+      S.ti = (S.ti+1)%T.length;
+      S.load();
+      if(S.playing) S.play();
       S.emit();
     };
-    S.play=function(){ S.off=false; set('bgm_off','0'); S.err=false; S.start(); };
-    S.stop=function(){ S.off=true; set('bgm_off','1'); kill(); S.playing=false; S.emit(); };
-    S.next=function(){ var was=S.playing; kill(); S.playing=false; S.ti=(S.ti+1)%T.length; if(was) S.start(); else S.emit(); };
-    S.setVol=function(x){ S.vol=x; set('bgm_vol',String(Math.round(x*100))); if(S.au) S.au.volume=vol(); };
-    // เบราว์เซอร์บล็อกเสียงอัตโนมัติ: ถ้าเล่นเองไม่ได้ จะเริ่มเล่นตอนผู้ใช้คลิก/กดแป้นครั้งแรกที่ไหนก็ได้ในหน้า
-    S.arm=function(){
-      if(S.armed) return; S.armed=true;
-      var evs=['pointerdown','keydown','touchstart'];
-      function h(){ evs.forEach(function(e){ document.removeEventListener(e,h,true); }); S.armed=false; if(!S.off && !S.playing && !S.au) S.play(); }
-      evs.forEach(function(e){ document.addEventListener(e,h,true); });
+
+    S.setVol=function(x){
+      S.vol = x;
+      set('bgm_vol', String(Math.round(x*100)));
+      if(S.au) S.au.volume = x;
     };
-    S.auto=function(){ if(!S.off && !S.playing && !S.au) S.start(); };
-    // หน้าบูต: กดเข้าระบบ (คลิก / Enter) = ปิดหน้าบูต + เริ่มเพลงพร้อมกัน (การคลิกนี้คือสิ่งที่เบราว์เซอร์ต้องการเพื่อเปิดเสียง)
-    function enter(b){
-      b.classList.add('boot-out');
-      S.off=false; set('bgm_off','0');            // กดเข้าระบบ = ตั้งใจเปิดเพลง (แม้เคยกด STOP ไว้)
-      if(!S.playing && !S.au) S.play();
-    }
-    try{ document.removeEventListener('click',window.__qsClickH,true); document.removeEventListener('keydown',window.__qsKeyH,true); }catch(e){}
-    window.__qsClickH=function(e){ var b=e.target&&e.target.closest&&e.target.closest('.boot'); if(b && !b.classList.contains('boot-out')) enter(b); };
-    window.__qsKeyH=function(e){
-      if(e.key==='Enter'||e.key===' '){ var b=document.querySelector('.boot:not(.boot-out)'); if(b){ e.preventDefault(); enter(b); } }
-    };
-    document.addEventListener('click',window.__qsClickH,true);
-    document.addEventListener('keydown',window.__qsKeyH,true);
   }.toString() + ")();";
+
   try{
-    if(P){ if(!P.__qs || P.__qs.v!==5){ P.eval(CODE); } }
+    if(P){ if(!P.__qs || P.__qs.v!==6){ P.eval(CODE); } }
   }catch(e){
     try{ var sc=P.document.createElement('script'); sc.textContent=CODE; P.document.head.appendChild(sc); }catch(e2){}
   }
-  var S=P&&P.__qs;
-  if(!S){ nm.className='n err'; nm.textContent='เครื่องเล่นใช้ไม่ได้ในเบราว์เซอร์นี้'; return; }
-  v.value=Math.round(S.vol*100);
+
+  var S = P && P.__qs;
+  if(!S) return;
+
+  v.value = Math.round(S.vol * 100);
+  
   function render(){
-    var on=S.playing;
-    b.textContent=on?'■ STOP':'▶ PLAY'; b.className=on?'on':''; eq.className=on?'eq play':'eq';
-    if(S.err){ nm.className='n err'; nm.textContent='ไม่พบไฟล์เพลง: ตรวจโฟลเดอร์ static/ และ enableStaticServing ใน .streamlit/config.toml แล้วรีสตาร์ตแอป'; }
-    else{ nm.className='n'; nm.textContent=S.tracks[S.ti].n; }
+    var on = S.playing;
+    b.textContent = on ? '■ STOP' : '▶ PLAY';
+    b.className = on ? 'on' : '';
+    eq.className = on ? 'eq play' : 'eq';
+    nm.textContent = S.tracks[S.ti].n;
   }
-  S.subs=[render]; render();
-  b.onclick=function(){ S.playing?S.stop():S.play(); };
-  nx.onclick=function(){ S.next(); };
-  v.oninput=function(){ S.setVol(v.value/100); };
-  S.auto();   // พยายามเล่นเองทุกครั้งที่เข้าเว็บ (ถ้าถูกบล็อก จะเล่นตอนคลิกครั้งแรก)
+
+  S.onUpdate = render;
+  render();
+
+  b.onclick = function(){
+    if(S.playing){ S.stop(); } else { S.play(); }
+    render();
+  };
+  nx.onclick = function(){ S.next(); render(); };
+  v.oninput = function(){ S.setVol(v.value/100); };
 })();
 </script></body></html>"""
 
 
 def music_player():
-    """เครื่องเล่นเพลงพื้นหลัง: เล่นเองทุกครั้งที่เข้าเว็บ (ถ้าเบราว์เซอร์บล็อก จะเล่นตอนคลิกครั้งแรก) — เพลงอยู่ใน static/bgm_2.mp3, bgm_1.mp3 ต้องเปิด enableStaticServing"""
+    """เครื่องเล่นเพลงพื้นหลัง: เสถียรและไม่แสดงข้อความ Error สีแดงเมื่อโหลดไฟล์"""
     try:
         import streamlit.components.v1 as components
         components.html(MUSIC_HTML, height=112)
