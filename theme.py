@@ -3,7 +3,7 @@
 theme.py
 ========
 ดีไซน์ทั้งเว็บ: สไตล์ Cyberpunk (เหลือง-ฟ้า-ชมพูนีออน มุมตัด สแกนไลน์ ตัวเลขฟอนต์โมโน)
-พร้อมหน้า Boot Sequence แบบเต็มจอและระบบเปิดเพลงอัตโนมัติเมื่อกดเข้าสู่ระบบ
+ระบบ Boot Sequence เต็มจอคลุมทับทั้งหมด และเปิด Dashboard + เพลงเมื่อกด Enter Night City
 """
 
 from datetime import datetime
@@ -195,17 +195,6 @@ def inject():
     boot_once()
 
 
-def hero(title: str, subtitle: str = "", pill: str = "LIVE"):
-    pill_html = f'<div class="hero-pill">● {pill}</div>' if pill else ""
-    st.markdown(_html(f"""
-        <div class="hero">
-        <div class="hero-mark">◆</div>
-        <div><div class="hero-title">{title}</div><div class="hero-sub">{subtitle}</div></div>
-        {pill_html}
-        </div>
-    """), unsafe_allow_html=True)
-
-
 BOOT_COMPONENT = """
 <!doctype html>
 <html>
@@ -218,11 +207,13 @@ BOOT_COMPONENT = """
     font-family: 'Share Tech Mono', 'IBM Plex Mono', monospace;
     color: #00f0ff;
     overflow: hidden;
+    height: 100vh;
+    width: 100vw;
   }
   .boot {
     position: fixed;
     inset: 0;
-    z-index: 999999;
+    z-index: 9999999;
     background: #05060d;
     display: flex;
     justify-content: center;
@@ -285,7 +276,7 @@ BOOT_COMPONENT = """
   @keyframes bootOn { to { opacity: 1; } }
   @keyframes bootType { to { width: 100%; } }
   .fade-out {
-    animation: bootExit 0.7s cubic-bezier(.7, 0, .3, 1) forwards;
+    animation: bootExit 0.6s cubic-bezier(.7, 0, .3, 1) forwards;
   }
   @keyframes bootExit {
     0% { transform: none; filter: none; opacity: 1; }
@@ -311,7 +302,6 @@ BOOT_COMPONENT = """
   var scr = document.getElementById('screen');
   
   function launch(){
-    // สั่งให้หน้าต่างหลัก (Parent) เล่นเพลงทันทีผ่าน JavaScript ควบคุม Audio
     try {
       if(window.parent && window.parent.__qs && window.parent.__qs.play) {
         window.parent.__qs.play();
@@ -320,8 +310,12 @@ BOOT_COMPONENT = """
 
     scr.classList.add('fade-out');
     setTimeout(function(){
-      scr.style.display = 'none';
-    }, 700);
+      try {
+        if(window.parent && window.parent.location) {
+          window.parent.location.reload();
+        }
+      } catch(e) {}
+    }, 550);
   }
 
   btn.addEventListener('click', launch);
@@ -335,14 +329,24 @@ BOOT_COMPONENT = """
 
 
 def boot_once():
-    """หน้าบูตแยกเป็น Component อิสระเต็มจอ คลิกปุ่มปุ๊บหายไปพร้อมเพลงขึ้นทันที"""
-    try:
-        if not st.session_state.get("_qs_booted"):
-            st.session_state["_qs_booted"] = True
-            import streamlit.components.v1 as components
-            components.html(BOOT_COMPONENT, height=900, scrolling=False)
-    except Exception:
-        pass
+    """ตรวจสอบสถานะ: ถ้ายังไม่กดเข้าสู่ระบบ ให้เรนเดอร์ Boot Sequence แบบเต็มจอทับทุกอย่าง แล้วหยุดการทำงานหน้าหลักไว้ก่อน"""
+    if not st.session_state.get("_qs_booted", False):
+        import streamlit.components.v1 as components
+        # เคลียร์หน้าจอทั้งหมดด้วยการกำหนด session และแสดง Component เต็มหน้าจอ
+        st.session_state["_qs_booted"] = True
+        components.html(BOOT_COMPONENT, height=1000, scrolling=False)
+        st.stop()
+
+
+def hero(title: str, subtitle: str = "", pill: str = "LIVE"):
+    pill_html = f'<div class="hero-pill">● {pill}</div>' if pill else ""
+    st.markdown(_html(f"""
+        <div class="hero">
+        <div class="hero-mark">◆</div>
+        <div><div class="hero-title">{title}</div><div class="hero-sub">{subtitle}</div></div>
+        {pill_html}
+        </div>
+    """), unsafe_allow_html=True)
 
 
 HUD_JS = r"""<!doctype html><html><body><script>
@@ -444,9 +448,9 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   var b=document.getElementById('b'), v=document.getElementById('v'), eq=document.getElementById('eq'), nm=document.getElementById('nm'), nx=document.getElementById('nx');
 
   var CODE = "(" + function(){
-    if(window.__qs && window.__qs.v===8) return;
+    if(window.__qs && window.__qs.v===9) return;
     var T=[{n:'Let You Down',u:'app/static/bgm_2.mp3'},{n:'wiv — i love u',u:'app/static/bgm_1.mp3'}];
-    var S=window.__qs={v:8,ti:0,au:null,playing:false,vol:0.35,tracks:T};
+    var S=window.__qs={v:9,ti:0,au:null,playing:false,vol:0.35,tracks:T};
     var ls=null; try{ ls=window.localStorage; }catch(e){}
     function get(k){ try{return ls&&ls.getItem(k);}catch(e){return null;} }
     function set(k,x){ try{ ls&&ls.setItem(k,x); }catch(e){} }
@@ -497,7 +501,7 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   }.toString() + ")();";
 
   try{
-    if(P){ if(!P.__qs || P.__qs.v!==8){ P.eval(CODE); } }
+    if(P){ if(!P.__qs || P.__qs.v!==9){ P.eval(CODE); } }
   }catch(e){
     try{ var sc=P.document.createElement('script'); sc.textContent=CODE; P.document.head.appendChild(sc); }catch(e2){}
   }
