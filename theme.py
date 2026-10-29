@@ -258,8 +258,8 @@ hr{border-color:var(--line) !important;}
 }
 
 /* ---------- Boot (ขึ้นครั้งเดียวต่อเซสชัน) ---------- */
-.boot{position:fixed;inset:0;z-index:10000;background:#05060d;display:grid;place-items:center;cursor:pointer;
-  animation:bootOut .55s ease 14s forwards;  /* กันค้าง: ถ้าไม่มีใครกด จะจางหายเองหลัง 14 วินาที */
+.boot{position:fixed;inset:0;z-index:10000;background:#05060d;display:grid;place-items:center;
+  animation:bootOut .55s ease 45s forwards;  /* กันค้างกรณีระบบขัดข้อง: จางหายเองหลัง 45 วินาที (ปกติต้องกดปุ่มหรือ Enter) */
   background-image:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,240,255,.04) 3px);}
 .boot-in{font-family:var(--mono);font-size:14px;letter-spacing:1.2px;min-width:min(520px,86vw);}
 .boot .bl{white-space:nowrap;overflow:hidden;width:0;opacity:0;color:var(--cyan);margin:5px 0;
@@ -283,7 +283,8 @@ hr{border-color:var(--line) !important;}
 @keyframes bootLine{0%,40%{opacity:0}72%{opacity:1}100%{opacity:0}}
 .boot .boot-go{opacity:0;margin-top:24px;text-align:center;color:var(--gold);border:2px solid var(--gold);padding:10px 18px;
   font-weight:700;letter-spacing:4px;font-size:15px;animation:bootOn 0s 2.5s forwards, goPulse 1.3s ease-in-out 2.5s infinite;}
-.boot:hover .boot-go{background:var(--gold);color:#05060d;}
+.boot .boot-go{cursor:pointer;}
+.boot .boot-go:hover{background:var(--gold);color:#05060d;}
 .boot .boot-hint{opacity:0;margin-top:10px;text-align:center;color:var(--muted);font-size:11.5px;letter-spacing:1px;animation:bootOn 0s 2.7s forwards;}
 @keyframes goPulse{0%,100%{box-shadow:0 0 4px rgba(252,238,10,.35)}50%{box-shadow:0 0 18px rgba(0,240,255,.85)}}
 @keyframes bootOn{to{opacity:1}}
@@ -361,7 +362,7 @@ BOOT_HTML = """
 <div class="bl" style="--d:1.65s">&gt; SYNCING NEURAL SCANNER .......... OK</div>
 <div class="bl ok" style="--d:2.05s">&gt; ACCESS GRANTED</div>
 <div class="boot-go">[ ▶ ENTER NIGHT CITY ]</div>
-<div class="boot-hint">คลิกที่ใดก็ได้ หรือกด Enter เพื่อเข้าสู่ระบบ</div>
+<div class="boot-hint">กดปุ่มด้านบน หรือกดแป้น Enter เพื่อเข้าสู่ระบบ</div>
 </div></div>
 """
 
@@ -502,9 +503,11 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
 
   // ตัวเล่นเพลงอยู่ที่หน้าต่างหลัก (ไม่ใช่ใน iframe) เพื่อให้เพลงเล่นต่อเนื่อง ไม่เริ่มใหม่เวลา Streamlit รีโหลดหน้า
   var CODE = "(" + function(){
-    if(window.__qs && window.__qs.v===5) return;
-    var T=[{n:'Let You Down',u:'/app/static/bgm_2.mp3'},{n:'wiv — i love u (slowed + reverb)',u:'/app/static/bgm_1.mp3'}];
-    var S=window.__qs={v:5,ti:0,au:null,playing:false,err:false,vol:0.35,subs:[],tracks:T,armed:false};
+    if(window.__qs && window.__qs.v===7) return;
+    var T=[{n:'Let You Down',f:'bgm_2.mp3'},{n:'wiv — i love u (slowed + reverb)',f:'bgm_1.mp3'}];
+    // ลองหลายตำแหน่ง: ในเครื่อง (/app/static) และบน Streamlit Cloud ที่แอปอยู่ใต้ /~/+/
+    function urls(f){ var out=[]; ['app/static/'+f,'/app/static/'+f,'/~/+/app/static/'+f].forEach(function(u){ var h; try{ h=new URL(u,document.baseURI).href; }catch(e){ h=u; } if(out.indexOf(h)<0) out.push(h); }); return out; }
+    var S=window.__qs={v:7,ti:0,au:null,playing:false,err:false,vol:0.35,subs:[],tracks:T,armed:false};
     var ls=null; try{ ls=window.localStorage; }catch(e){}
     function get(k){ try{return ls&&ls.getItem(k);}catch(e){return null;} }
     function set(k,x){ try{ ls&&ls.setItem(k,x); }catch(e){} }
@@ -514,10 +517,10 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
     S.emit=function(){ S.subs.forEach(function(f){ try{f();}catch(e){} }); };
     function drop(x){ try{ x.onended=null; x.onerror=null; x.pause(); x.removeAttribute('src'); x.load(); }catch(e){} }
     function kill(){ if(S.au){ drop(S.au); S.au=null; } }
-    S.start=function(){
-      kill(); var a=new Audio(T[S.ti].u); S.au=a; a.volume=vol(); a.preload='auto';
+    S.start=function(ci){
+      ci=ci||0; var L=urls(T[S.ti].f); kill(); var a=new Audio(L[ci]); S.au=a; S.url=L[ci]; a.volume=vol(); a.preload='auto';
       a.onended=function(){ S.ti=(S.ti+1)%T.length; S.start(); };
-      a.onerror=function(){ if(S.au!==a) return; S.au=null; S.playing=false; S.err=true; S.emit(); };
+      a.onerror=function(){ if(S.au!==a) return; drop(a); S.au=null; if(ci+1<L.length){ S.start(ci+1); return; } S.playing=false; S.err=true; S.tried=L.join(' | '); S.emit(); };
       var p=a.play();
       if(p && p.then){
         p.then(function(){ if(S.au===a){ S.playing=true; S.err=false; S.emit(); } })
@@ -533,10 +536,10 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
     S.arm=function(){
       if(S.armed) return; S.armed=true;
       var evs=['pointerdown','keydown','touchstart'];
-      function h(){ evs.forEach(function(e){ document.removeEventListener(e,h,true); }); S.armed=false; if(!S.off && !S.playing && !S.au) S.play(); }
+      function h(){ if(document.querySelector('.boot:not(.boot-out)')) return; evs.forEach(function(e){ document.removeEventListener(e,h,true); }); S.armed=false; if(!S.off && !S.playing && !S.au) S.play(); }
       evs.forEach(function(e){ document.addEventListener(e,h,true); });
     };
-    S.auto=function(){ if(!S.off && !S.playing && !S.au) S.start(); };
+    S.auto=function(){ if(document.querySelector('.boot:not(.boot-out)')) return; if(!S.off && !S.playing && !S.au) S.start(); };
     // หน้าบูต: กดเข้าระบบ (คลิก / Enter) = ปิดหน้าบูต + เริ่มเพลงพร้อมกัน (การคลิกนี้คือสิ่งที่เบราว์เซอร์ต้องการเพื่อเปิดเสียง)
     function enter(b){
       b.classList.add('boot-out');
@@ -544,15 +547,15 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
       if(!S.playing && !S.au) S.play();
     }
     try{ document.removeEventListener('click',window.__qsClickH,true); document.removeEventListener('keydown',window.__qsKeyH,true); }catch(e){}
-    window.__qsClickH=function(e){ var b=e.target&&e.target.closest&&e.target.closest('.boot'); if(b && !b.classList.contains('boot-out')) enter(b); };
+    window.__qsClickH=function(e){ var g=e.target&&e.target.closest&&e.target.closest('.boot-go'); var b=g&&g.closest('.boot'); if(b && !b.classList.contains('boot-out')) enter(b); };
     window.__qsKeyH=function(e){
-      if(e.key==='Enter'||e.key===' '){ var b=document.querySelector('.boot:not(.boot-out)'); if(b){ e.preventDefault(); enter(b); } }
+      if(e.key==='Enter'){ var b=document.querySelector('.boot:not(.boot-out)'); if(b){ e.preventDefault(); enter(b); } }
     };
     document.addEventListener('click',window.__qsClickH,true);
     document.addEventListener('keydown',window.__qsKeyH,true);
   }.toString() + ")();";
   try{
-    if(P){ if(!P.__qs || P.__qs.v!==5){ P.eval(CODE); } }
+    if(P){ if(!P.__qs || P.__qs.v!==7){ P.eval(CODE); } }
   }catch(e){
     try{ var sc=P.document.createElement('script'); sc.textContent=CODE; P.document.head.appendChild(sc); }catch(e2){}
   }
@@ -562,7 +565,7 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   function render(){
     var on=S.playing;
     b.textContent=on?'■ STOP':'▶ PLAY'; b.className=on?'on':''; eq.className=on?'eq play':'eq';
-    if(S.err){ nm.className='n err'; nm.textContent='ไม่พบไฟล์เพลง: ตรวจโฟลเดอร์ static/ และ enableStaticServing ใน .streamlit/config.toml แล้วรีสตาร์ตแอป'; }
+    if(S.err){ nm.className='n err'; nm.textContent='ไม่พบไฟล์เพลง (ลองแล้ว: '+(S.tried||'-')+') ตรวจโฟลเดอร์ static/ และ enableStaticServing'; }
     else{ nm.className='n'; nm.textContent=S.tracks[S.ti].n; }
   }
   S.subs=[render]; render();
