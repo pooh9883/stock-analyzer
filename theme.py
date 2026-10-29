@@ -3,6 +3,7 @@
 theme.py
 ========
 ดีไซน์ทั้งเว็บ: สไตล์ Cyberpunk (เหลือง-ฟ้า-ชมพูนีออน มุมตัด สแกนไลน์ ตัวเลขฟอนต์โมโน)
+พร้อมหน้า Boot Sequence แบบเต็มจอและระบบเปิดเพลงอัตโนมัติเมื่อกดเข้าสู่ระบบ
 """
 
 from datetime import datetime
@@ -221,7 +222,7 @@ BOOT_COMPONENT = """
   .boot {
     position: fixed;
     inset: 0;
-    z-index: 99999;
+    z-index: 999999;
     background: #05060d;
     display: flex;
     justify-content: center;
@@ -289,7 +290,7 @@ BOOT_COMPONENT = """
   @keyframes bootExit {
     0% { transform: none; filter: none; opacity: 1; }
     50% { transform: scaleY(.006); filter: brightness(2.2); opacity: 1; }
-    100% { transform: scaleY(.006) scaleX(0); opacity: 0; visibility: hidden; }
+    100% { transform: scaleY(.006) scaleX(0); opacity: 0; visibility: hidden; pointer-events: none; }
   }
 </style>
 </head>
@@ -320,12 +321,6 @@ BOOT_COMPONENT = """
     scr.classList.add('fade-out');
     setTimeout(function(){
       scr.style.display = 'none';
-      // แจ้ง Parent ให้ซ่อน iframe นี้ผ่านความสูง
-      try {
-        if(window.parent && window.parent.postMessage) {
-          window.parent.postMessage({type: 'remove_boot'}, '*');
-        }
-      } catch(e){}
     }, 700);
   }
 
@@ -345,7 +340,7 @@ def boot_once():
         if not st.session_state.get("_qs_booted"):
             st.session_state["_qs_booted"] = True
             import streamlit.components.v1 as components
-            components.html(BOOT_COMPONENT, height=800, scrolling=False)
+            components.html(BOOT_COMPONENT, height=900, scrolling=False)
     except Exception:
         pass
 
@@ -449,9 +444,9 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   var b=document.getElementById('b'), v=document.getElementById('v'), eq=document.getElementById('eq'), nm=document.getElementById('nm'), nx=document.getElementById('nx');
 
   var CODE = "(" + function(){
-    if(window.__qs && window.__qs.v===7) return;
+    if(window.__qs && window.__qs.v===8) return;
     var T=[{n:'Let You Down',u:'app/static/bgm_2.mp3'},{n:'wiv — i love u',u:'app/static/bgm_1.mp3'}];
-    var S=window.__qs={v:7,ti:0,au:null,playing:false,vol:0.35,tracks:T};
+    var S=window.__qs={v:8,ti:0,au:null,playing:false,vol:0.35,tracks:T};
     var ls=null; try{ ls=window.localStorage; }catch(e){}
     function get(k){ try{return ls&&ls.getItem(k);}catch(e){return null;} }
     function set(k,x){ try{ ls&&ls.setItem(k,x); }catch(e){} }
@@ -502,7 +497,7 @@ MUSIC_HTML = r"""<!doctype html><html><head><meta charset="utf-8">
   }.toString() + ")();";
 
   try{
-    if(P){ if(!P.__qs || P.__qs.v!==7){ P.eval(CODE); } }
+    if(P){ if(!P.__qs || P.__qs.v!==8){ P.eval(CODE); } }
   }catch(e){
     try{ var sc=P.document.createElement('script'); sc.textContent=CODE; P.document.head.appendChild(sc); }catch(e2){}
   }
