@@ -77,10 +77,15 @@ def _norm(t):
 
 
 def _clean_title(title, source):
+    """ตัดชื่อแหล่งท้ายหัวข้อ (" - Reuters") ออก คืน (หัวข้อ, แหล่ง) ถ้าไม่รู้แหล่งจะเอาจากท้ายหัวข้อ"""
     t = html.unescape(title or "").strip()
-    if source and t.endswith(" - " + source):
-        t = t[: -len(source) - 3].strip()
-    return t
+    if source and source != "ไม่ทราบแหล่ง" and t.endswith(" - " + source):
+        return t[: -len(source) - 3].strip(), source
+    if " - " in t:
+        head, tail = t.rsplit(" - ", 1)
+        if 0 < len(tail) <= 40 and head:
+            return head.strip(), tail.strip()
+    return t, (source if source != "ไม่ทราบแหล่ง" else "")
 
 
 def _fetch_one(ticker, days):
@@ -90,11 +95,12 @@ def _fetch_one(ticker, days):
     if not g:
         g = news_radar.fetch_google_news(f"{ticker} stock", max_items=15)
     for n in g:
+        _t, _src = _clean_title(n["title"], n["source"])
         items.append({
             "ticker": ticker,
-            "title_en": _clean_title(n["title"], n["source"]),
+            "title_en": _t,
             "link": n["link"],
-            "source": n["source"],
+            "source": _src,
             "ts": _parse_ts(n.get("pub_date")),
         })
     # Yahoo Finance (มีเวลาในข้อมูลดิบ)
@@ -294,7 +300,7 @@ _CSS = """
 .nf-card.pos .nf-bar{background:var(--up)} .nf-card.neg .nf-bar{background:var(--down)}
 .nf-body{flex:1;min-width:0}
 .nf-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-size:.74rem;color:var(--muted)}
-.nf-chip{font-family:var(--mono);font-weight:700;color:#05060d;background:var(--gold);padding:1px 7px;font-size:.72rem;letter-spacing:.05em}
+.nf-chip{font-family:var(--mono);font-weight:700;color:#05060d!important;-webkit-text-fill-color:#05060d;background:var(--gold);padding:1px 7px;font-size:.72rem;letter-spacing:.05em}
 .nf-tone{padding:1px 7px;font-size:.7rem;border:1px solid currentColor}
 .nf-tone.pos{color:var(--up)} .nf-tone.neg{color:var(--down)} .nf-tone.mid{color:var(--muted)}
 .nf-th{display:block;color:var(--text)!important;font-weight:700;font-size:1.02rem;line-height:1.45;text-decoration:none!important}
@@ -322,7 +328,7 @@ def _card(it, now):
     return (f'<div class="nf-card {cls}"><div class="nf-bar"></div><div class="nf-body">'
             f'<div class="nf-top"><span class="nf-chip">{_e(it["ticker"])}</span>'
             f'<span class="nf-tone {cls}">{_e(it["tone"])}</span>'
-            f'<span>{_e(it["source"])}</span><span>· {_e(when)}</span></div>'
+            f'<span>{_e(it["source"])}</span><span>{"· " if it["source"] else ""}{_e(when)}</span></div>'
             f'{title}{s}{en}</div></div>')
 
 
