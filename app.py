@@ -17,6 +17,7 @@ import advanced   # ไฟล์ advanced.py — options chain, insider, institu
 import deep       # ไฟล์ deep.py — momentum, relative strength, IV skew, target dispersion, earnings, news
 import backtest   # ไฟล์ backtest.py — ทดสอบย้อนหลังความแม่นยำของสัญญาณ technical
 import macro      # ไฟล์ macro.py — VIX, อัตราผลตอบแทนพันธบัตร 10 ปี
+import news_feed  # ไฟล์ news_feed.py — เรดาร์ข่าวภาษาไทย (แปล+สรุป)
 import news_radar # ไฟล์ news_radar.py — ดึงหัวข้อข่าวจริงให้ AI อ่านตอนสรุป
 import levels     # ไฟล์ levels.py — ราคาสดแบบอัปเดตอัตโนมัติ + โซนราคาอ้างอิง
 import momentum_ui  # momentum_ui.py — โมเมนตัมตามงานวิจัย + โซนหุ้นเขียวตลาดแดง + สอนวิธีอ่าน
@@ -760,7 +761,7 @@ if mode.startswith("📰"):
             <div class="mark">◆</div>
             <div class="title-text">
                 <h1>เรดาร์ข่าว — NEWS RADAR</h1>
-                <p>ติดตามข่าว + วัน earnings ของหุ้นที่คุณเฝ้าดู โดยไม่ต้องค้นหาทีละตัว</p>
+                <p>ข่าวล่าสุดของหุ้นที่คุณเฝ้าดู แปล + สรุปเป็นภาษาไทย เรียงใหม่สุดก่อน</p>
             </div>
         </div>
         """,
@@ -768,99 +769,7 @@ if mode.startswith("📰"):
     )
     st.write("")
 
-    st.caption(
-        "⚠️ ไม่สามารถสแกนข่าว/หุ้นทั้งตลาดโลกอัตโนมัติได้ฟรี — ใส่รายชื่อหุ้นที่อยากเฝ้าดูเอง (สูงสุด 15 ตัว) "
-        "ระบบจะดึงข่าวจริงจาก Google News + Yahoo Finance ให้ทุกตัว"
-    )
-
-    watchlist_input = st.text_area(
-        "รายชื่อหุ้นที่อยากเฝ้าดู (คั่นด้วยจุลภาค หรือขึ้นบรรทัดใหม่)",
-        value="NVDA, AAPL, SNDK, TSLA",
-        height=80,
-    )
-    if not ai_key:
-        st.caption("💡 ใส่คีย์เสริม AI ที่ด้านบนก่อนสแกน จะได้คำอธิบายสั้นๆ ต่อท้ายทุกข่าว ไม่ใส่ก็สแกนได้ปกติ แค่ไม่มีคำอธิบาย")
-
-    btn_scan = st.button("📡 สแกนเรดาร์ข่าว", use_container_width=False)
-
-    if btn_scan:
-        tickers = [t.strip() for t in watchlist_input.replace("\n", ",").split(",") if t.strip()][:15]
-        if not tickers:
-            st.error("กรุณาใส่ชื่อหุ้นอย่างน้อย 1 ตัวครับ")
-        else:
-            with st.spinner(f"กำลังสแกนข่าวและวัน earnings ของ {len(tickers)} หุ้น..."):
-                radar = news_radar.build_news_radar(tickers)
-
-            if ai_key:
-                with st.spinner("กำลังให้ AI อธิบายข่าวแต่ละอันสั้นๆ..."):
-                    for t, data in radar["per_ticker"].items():
-                        headlines = [n["title"] for n in data["news"]]
-                        if headlines:
-                            explanations = explain_headlines_with_ai(ai_key, t, headlines)
-                            for n, exp in zip(data["news"], explanations):
-                                n["explanation"] = exp
-
-            st.session_state.radar_result = radar
-
-    radar = st.session_state.get("radar_result")
-
-    if radar is None:
-        st.info("ใส่รายชื่อหุ้นแล้วกด 📡 สแกนเรดาร์ข่าว ได้เลยครับ")
-    else:
-        # ---------- กลุ่มหุ้นที่อาจได้อานิสงส์ร่วมกัน (sector เดียวกันภายใน watchlist) ----------
-        if radar["related_groups"]:
-            st.markdown('<div class="section-label">กลุ่มหุ้นที่อยู่อุตสาหกรรมเดียวกัน (อาจขยับตามกันได้)</div>', unsafe_allow_html=True)
-            for sector, tks in radar["related_groups"].items():
-                st.write(f"**{sector}**: {', '.join(tks)}")
-            st.caption("⚠️ การจับกลุ่มนี้ทำได้แค่ภายในรายชื่อที่คุณใส่ ไม่ใช่การสแกนทั้งตลาด")
-            st.markdown("---")
-
-        # ---------- เรียงตามวัน earnings ใกล้สุดก่อน ----------
-        st.markdown('<div class="section-label">เรียงตามความเร่งด่วน — วัน Earnings ใกล้สุดก่อน</div>', unsafe_allow_html=True)
-
-        for t in radar["sorted_by_earnings"]:
-            data = radar["per_ticker"][t]
-            tone = data["overall_tone"]
-            tone_color = "#3ecf6e" if "บวก" in tone else ("#e5534b" if "ลบ" in tone else "#d4af37")
-
-            earnings_str = "ไม่ทราบวันที่"
-            if data["earnings_date"] is not None:
-                try:
-                    earnings_str = str(data["earnings_date"])
-                except Exception:
-                    pass
-
-            with st.expander(f"**{t}** — {data['name']} · {data['sector']} · {tone}"):
-                st.markdown(
-                    f"""
-                    <div style="background:#14161d; border:1px solid rgba(212,175,55,0.2); border-radius:8px; padding:10px 14px; margin-bottom:10px;">
-                        <span style="color:#9a9aa8; font-size:13px;">วัน Earnings ถัดไป:</span>
-                        <span style="color:{tone_color}; font-weight:600; margin-left:6px;">{earnings_str}</span>
-                        <span style="color:#9a9aa8; font-size:13px; margin-left:16px;">โทนข่าวรวม:</span>
-                        <span style="color:{tone_color}; font-weight:600; margin-left:6px;">{tone}</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                if not data["news"]:
-                    st.caption("ไม่พบข่าวล่าสุดสำหรับหุ้นนี้")
-                else:
-                    for n in data["news"]:
-                        sentiment_tag = "🟢" if n["sentiment_score"] > 0 else ("🔴" if n["sentiment_score"] < 0 else "⚪")
-                        if n.get("link"):
-                            st.markdown(f"{sentiment_tag} [{n['title']}]({n['link']})  \n<span style='color:#9a9aa8; font-size:12px;'>{n['source']}</span>", unsafe_allow_html=True)
-                        else:
-                            st.write(f"{sentiment_tag} {n['title']} — _{n['source']}_")
-                        explanation = n.get("explanation", "")
-                        if explanation:
-                            st.markdown(f"<span style='color:#d4af37; font-size:13px;'>↳ {explanation}</span>", unsafe_allow_html=True)
-                        st.write("")
-
-        st.caption(
-            "⚠️ ข่าวดึงจาก Google News RSS (ฟรี ไม่มี API key) — เป็นแค่หัวข้อ+ลิงก์ ไม่ใช่เนื้อข่าวเต็ม "
-            "sentiment เป็นแบบ keyword-based คร่าวๆ ไม่ใช่ NLP model จริง"
-        )
+    news_feed.render(ai_key)  # news_feed.py — ฟีดข่าวภาษาไทย แปล+สรุป
 
     st.stop()  # หยุดตรงนี้ ไม่รันโค้ดวิเคราะห์หุ้นรายตัวด้านล่างต่อ
 
